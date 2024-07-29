@@ -7,7 +7,7 @@ set -euo pipefail
 # License: MIT
 # Creation Date: 29-07-2024
 # Last Modified: 29-07-2024
-# Usage: publish-to-docker.sh [OPTIONS]
+# Usage: docker-ctp.sh [OPTIONS]
 
 # Constants
 DEFAULT_GITHUB_USERNAME="admin@example.com"
