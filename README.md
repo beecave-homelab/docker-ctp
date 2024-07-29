@@ -1,4 +1,4 @@
-# Docker Container Tag and Push Script
+# docker-ctp
 
 This script builds, tags, and pushes a Docker image to the GitHub Container Registry.
 
@@ -23,8 +23,8 @@ To install and use the script, follow these steps:
 
 1. Clone the repository:
     ```bash
-    git clone INPUT_REQUIRED {repository_url}
-    cd example_repo
+    git clone https://git.beecave-homelab.com/lowie/docker-ctp
+    cd docker-ctp
     ```
 2. Make the script executable:
     ```bash
