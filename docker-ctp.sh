@@ -10,7 +10,7 @@ set -euo pipefail
 # Usage: docker-ctp.sh [OPTIONS]
 
 # Constants
-DEFAULT_GITHUB_USERNAME=${"op://Private/iefpeebic4w3mobhzkymaaongq/username"}
+DEFAULT_GITHUB_USERNAME=${"op read op://Private/iefpeebic4w3mobhzkymaaongq/username"}
 DEFAULT_REPO_NAME=${basename "$PWD"}
 DEFAULT_IMAGE_NAME=${basename "$PWD"}
 DEFAULT_TAG="latest"
