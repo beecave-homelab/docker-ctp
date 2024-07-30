@@ -10,10 +10,10 @@ set -euo pipefail
 # Usage: docker-ctp.sh [OPTIONS]
 
 # Constants
-DEFAULT_GITHUB_USERNAME="admin@example.com"
-DEFAULT_REPO_NAME="example_org/example_repo"
-DEFAULT_IMAGE_NAME=$(basename "$PWD")
-DEFAULT_TAG="example_tag"
+DEFAULT_GITHUB_USERNAME=${"op://Private/iefpeebic4w3mobhzkymaaongq/username"}
+DEFAULT_REPO_NAME=${basename "$PWD"}
+DEFAULT_IMAGE_NAME=${basename "$PWD"}
+DEFAULT_TAG="latest"
 DEFAULT_DOCKERFILE_DIR="."
 
 # ASCII Art
