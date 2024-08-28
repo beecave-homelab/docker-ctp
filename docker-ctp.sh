@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.2.0
+# Version: 0.2.1
 # License: MIT
 # Creation Date: 29-07-2024
 # Last Modified: 28-08-2024
@@ -112,25 +112,24 @@ parse_arguments() {
     done
 }
 
-# Function to prompt for a password or token
-prompt_for_credentials() {
+# Function to prompt for a Personal Access Token (PAT)
+prompt_for_pat() {
     if [[ "$REGISTRY" == "docker" ]]; then
         echo "Please enter your Docker Hub Personal Access Token (PAT):"
-        read -s CREDENTIALS
     elif [[ "$REGISTRY" == "github" ]]; then
         echo "Please enter your GitHub Personal Access Token (PAT):"
-        read -s CREDENTIALS
     else
         error_exit "Unknown registry: $REGISTRY"
     fi
+    read -s PAT
 }
 
 # Function to login to the selected registry
 login_to_registry() {
     if [[ "$REGISTRY" == "docker" ]]; then
-        echo $CREDENTIALS | docker login -u $USERNAME --password-stdin
+        echo $PAT | docker login -u $USERNAME --password-stdin
     elif [[ "$REGISTRY" == "github" ]]; then
-        echo $CREDENTIALS | docker login ghcr.io -u $USERNAME --password-stdin
+        echo $PAT | docker login ghcr.io -u $USERNAME --password-stdin
     fi
 
     if [[ $? -ne 0 ]]; then
@@ -182,7 +181,7 @@ main() {
 
     # Parse command-line options
     parse_arguments "$@"
-    prompt_for_credentials
+    prompt_for_pat
     login_to_registry
     build_docker_image
     tag_docker_image
