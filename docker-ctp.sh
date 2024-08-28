@@ -115,7 +115,7 @@ parse_arguments() {
 # Function to prompt for a password or token
 prompt_for_credentials() {
     if [[ "$REGISTRY" == "docker" ]]; then
-        echo "Please enter your Docker Hub password:"
+        echo "Please enter your Docker Hub Personal Access Token (PAT):"
         read -s CREDENTIALS
     elif [[ "$REGISTRY" == "github" ]]; then
         echo "Please enter your GitHub Personal Access Token (PAT):"
