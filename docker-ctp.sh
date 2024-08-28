@@ -1,20 +1,22 @@
 #!/bin/bash
 set -euo pipefail
 
-# Script Description: This script builds, tags, and pushes a Docker image to the GitHub Container Registry.
+# Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.1.0
+# Version: 0.2.0
 # License: MIT
 # Creation Date: 29-07-2024
-# Last Modified: 29-07-2024
+# Last Modified: 28-08-2024
 # Usage: docker-ctp.sh [OPTIONS]
 
 # Constants
+DEFAULT_DOCKER_USERNAME="your-docker-username"
 DEFAULT_GITHUB_USERNAME="admin@example.com"
-DEFAULT_REPO_NAME="github_organization/repo_name"
-DEFAULT_IMAGE_NAME=${basename "$PWD"}
+DEFAULT_REPO_NAME="repo_name"
+DEFAULT_IMAGE_NAME=$(basename "$PWD")
 DEFAULT_TAG="latest"
 DEFAULT_DOCKERFILE_DIR="."
+DEFAULT_REGISTRY="docker"  # Options: "docker" or "github"
 
 # ASCII Art
 print_ascii_art() {
@@ -25,7 +27,7 @@ print_ascii_art() {
 ██║     ██████╔╝█████╗  ███████║   ██║   █████╗     
 ██║     ██╔══██╗██╔══╝  ██╔══██║   ██║   ██╔══╝     
 ╚██████╗██║  ██║███████╗██║  ██║   ██║   ███████╗   
- ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝   
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚══════╝   
                                                     
            ████████╗ █████╗  ██████╗               
            ╚══██╔══╝██╔══██╗██╔════╝               
@@ -41,7 +43,7 @@ print_ascii_art() {
 ██║     ╚██████╔╝██████╔╝███████╗██║███████║██║  ██║
 ╚═╝      ╚═════╝ ╚═════╝ ╚══════╝╚═╝╚══════╝╚═╝  ╚═╝
                                                     
-  Create, tag and publish Docker images to ghrc.io
+  Create, tag and publish Docker images to Docker Hub or GitHub Container Registry
     "
 }
 
@@ -51,15 +53,17 @@ show_help() {
 Usage: ${0##*/} [OPTIONS]
 
 Options:
-  -u, --github-username   GitHub username (default: $DEFAULT_GITHUB_USERNAME)
-  -r, --repository-name   Repository name (default: $DEFAULT_REPO_NAME)
-  -i, --image-name        Docker image name (default: $DEFAULT_IMAGE_NAME)
-  -t, --image-tag         Docker image tag (default: $DEFAULT_TAG)
-  -d, --dockerfile-folder Path to Dockerfile folder (default: $DEFAULT_DOCKERFILE_DIR)
-  -h, --help              Display this help message
+  -u, --username         Docker Hub or GitHub username (default: Docker Hub username: $DEFAULT_DOCKER_USERNAME, GitHub username: $DEFAULT_GITHUB_USERNAME)
+  -r, --repository-name  Repository name (default: $DEFAULT_REPO_NAME)
+  -i, --image-name       Docker image name (default: $DEFAULT_IMAGE_NAME)
+  -t, --image-tag        Docker image tag (default: $DEFAULT_TAG)
+  -d, --dockerfile-dir   Path to Dockerfile folder (default: $DEFAULT_DOCKERFILE_DIR)
+  -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: $DEFAULT_REGISTRY)
+  -h, --help             Display this help message
 
 Examples:
-  ${0##*/} -u user -r repo/image -i image -t tag -d /path/to/dockerfile
+  ${0##*/} -g docker -u your-docker-username -r your-repo/image -i image -t tag -d /path/to/dockerfile
+  ${0##*/} -g github -u your-github-username -r your-org/repo/image -i image -t tag -d /path/to/dockerfile
 "
 }
 
@@ -73,8 +77,8 @@ error_exit() {
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -u|--github-username)
-                GITHUB_USERNAME="$2"
+            -u|--username)
+                USERNAME="$2"
                 shift 2
                 ;;
             -r|--repository-name)
@@ -89,8 +93,12 @@ parse_arguments() {
                 TAG="$2"
                 shift 2
                 ;;
-            -d|--dockerfile-folder)
+            -d|--dockerfile-dir)
                 DOCKERFILE_DIR="$2"
+                shift 2
+                ;;
+            -g|--registry)
+                REGISTRY="$2"
                 shift 2
                 ;;
             -h|--help)
@@ -104,17 +112,29 @@ parse_arguments() {
     done
 }
 
-# Function to prompt for GitHub token
-prompt_for_token() {
-    echo "Please enter your GitHub Personal Access Token (PAT):"
-    read -s GITHUB_TOKEN
+# Function to prompt for a password or token
+prompt_for_credentials() {
+    if [[ "$REGISTRY" == "docker" ]]; then
+        echo "Please enter your Docker Hub password:"
+        read -s CREDENTIALS
+    elif [[ "$REGISTRY" == "github" ]]; then
+        echo "Please enter your GitHub Personal Access Token (PAT):"
+        read -s CREDENTIALS
+    else
+        error_exit "Unknown registry: $REGISTRY"
+    fi
 }
 
-# Function to login to GitHub Container Registry
-login_to_github_registry() {
-    echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
+# Function to login to the selected registry
+login_to_registry() {
+    if [[ "$REGISTRY" == "docker" ]]; then
+        echo $CREDENTIALS | docker login -u $USERNAME --password-stdin
+    elif [[ "$REGISTRY" == "github" ]]; then
+        echo $CREDENTIALS | docker login ghcr.io -u $USERNAME --password-stdin
+    fi
+
     if [[ $? -ne 0 ]]; then
-        error_exit "Failed to login to GitHub Container Registry"
+        error_exit "Failed to login to $REGISTRY registry"
     fi
 }
 
@@ -128,7 +148,11 @@ build_docker_image() {
 
 # Function to tag the Docker image
 tag_docker_image() {
-    docker tag $IMAGE_NAME:$TAG ghcr.io/$REPO_NAME:$TAG
+    if [[ "$REGISTRY" == "docker" ]]; then
+        docker tag $IMAGE_NAME:$TAG $USERNAME/$REPO_NAME:$TAG
+    elif [[ "$REGISTRY" == "github" ]]; then
+        docker tag $IMAGE_NAME:$TAG ghcr.io/$REPO_NAME:$TAG
+    fi
     if [[ $? -ne 0 ]]; then
         error_exit "Failed to tag Docker image"
     fi
@@ -136,30 +160,35 @@ tag_docker_image() {
 
 # Function to push the Docker image
 push_docker_image() {
-    docker push ghcr.io/$REPO_NAME:$TAG
+    if [[ "$REGISTRY" == "docker" ]]; then
+        docker push $USERNAME/$REPO_NAME:$TAG
+    elif [[ "$REGISTRY" == "github" ]]; then
+        docker push ghcr.io/$REPO_NAME:$TAG
+    fi
     if [[ $? -ne 0 ]]; then
-        error_exit "Failed to push Docker image"
+        error_exit "Failed to push Docker image to $REGISTRY"
     fi
 }
 
 # Main function to encapsulate script logic
 main() {
     # Default values
-    GITHUB_USERNAME=$DEFAULT_GITHUB_USERNAME
+    USERNAME=$DEFAULT_DOCKER_USERNAME
     REPO_NAME=$DEFAULT_REPO_NAME
     IMAGE_NAME=$DEFAULT_IMAGE_NAME
     TAG=$DEFAULT_TAG
     DOCKERFILE_DIR=$DEFAULT_DOCKERFILE_DIR
+    REGISTRY=$DEFAULT_REGISTRY
 
     # Parse command-line options
     parse_arguments "$@"
-    prompt_for_token
-    login_to_github_registry
+    prompt_for_credentials
+    login_to_registry
     build_docker_image
     tag_docker_image
     push_docker_image
 
-    echo "Docker image successfully pushed to GitHub Packages"
+    echo "Docker image successfully pushed to $REGISTRY registry"
 }
 
 # Print ASCII Art
