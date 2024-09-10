@@ -4,3 +4,4 @@
 !*.sh
 !LICENSE
 !*.md
+!.env.example
