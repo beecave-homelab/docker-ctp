@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.2.1
+# Version: 0.2.3
 # License: MIT
 # Creation Date: 29-07-2024
 # Last Modified: 28-08-2024
@@ -14,9 +14,19 @@ DEFAULT_DOCKER_USERNAME="your-docker-username"
 DEFAULT_GITHUB_USERNAME="admin@example.com"
 DEFAULT_REPO_NAME="repo_name"
 DEFAULT_IMAGE_NAME=$(basename "$PWD")
-DEFAULT_TAG="latest"
 DEFAULT_DOCKERFILE_DIR="."
 DEFAULT_REGISTRY="docker"  # Options: "docker" or "github"
+
+# Function to dynamically set the default tag based on the selected registry
+set_default_tag() {
+    if [[ "$REGISTRY" == "docker" ]]; then
+        DEFAULT_TAG="latest"
+    elif [[ "$REGISTRY" == "github" ]]; then
+        DEFAULT_TAG="main"
+    else
+        error_exit "Unknown registry: $REGISTRY"
+    fi
+}
 
 # ASCII Art
 print_ascii_art() {
@@ -43,27 +53,31 @@ print_ascii_art() {
 ██║     ╚██████╔╝██████╔╝███████╗██║███████║██║  ██║
 ╚═╝      ╚═════╝ ╚═════╝ ╚══════╝╚═╝╚══════╝╚═╝  ╚═╝
                                                     
-  Create, tag and publish Docker images to Docker Hub or GitHub Container Registry
     "
 }
 
 # Function to display help
 show_help() {
     echo "
+Create, tag and publish Docker images to Docker Hub or GitHub Container Registry
+
 Usage: ${0##*/} [OPTIONS]
 
 Options:
   -u, --username         Docker Hub or GitHub username (default: Docker Hub username: $DEFAULT_DOCKER_USERNAME, GitHub username: $DEFAULT_GITHUB_USERNAME)
   -r, --repository-name  Repository name (default: $DEFAULT_REPO_NAME)
   -i, --image-name       Docker image name (default: $DEFAULT_IMAGE_NAME)
-  -t, --image-tag        Docker image tag (default: $DEFAULT_TAG)
+  -t, --image-tag        Docker image tag (default: 'latest' for Docker, 'main' for GitHub)
   -d, --dockerfile-dir   Path to Dockerfile folder (default: $DEFAULT_DOCKERFILE_DIR)
   -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: $DEFAULT_REGISTRY)
   -h, --help             Display this help message
 
 Examples:
-  ${0##*/} -g docker -u your-docker-username -r your-repo/image -i image -t tag -d /path/to/dockerfile
-  ${0##*/} -g github -u your-github-username -r your-org/repo/image -i image -t tag -d /path/to/dockerfile
+  # Push to Docker Hub (default tag: latest):
+  ${0##*/} -g docker -u your-docker-username -r your-repo -i image -d /path/to/dockerfile
+
+  # Push to GitHub Container Registry (default tag: main):
+  ${0##*/} -g github -u your-github-username -r your-org/repo -i image -d /path/to/dockerfile
 "
 }
 
@@ -175,12 +189,18 @@ main() {
     USERNAME=$DEFAULT_DOCKER_USERNAME
     REPO_NAME=$DEFAULT_REPO_NAME
     IMAGE_NAME=$DEFAULT_IMAGE_NAME
-    TAG=$DEFAULT_TAG
     DOCKERFILE_DIR=$DEFAULT_DOCKERFILE_DIR
     REGISTRY=$DEFAULT_REGISTRY
 
     # Parse command-line options
     parse_arguments "$@"
+
+    # Dynamically set the default tag based on the registry
+    set_default_tag
+
+    # If no tag is provided, use the dynamically determined default
+    TAG=${TAG:-$DEFAULT_TAG}
+
     prompt_for_pat
     login_to_registry
     build_docker_image
