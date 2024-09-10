@@ -3,19 +3,23 @@ set -euo pipefail
 
 # Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.2.3
+# Version: 0.2.7
 # License: MIT
 # Creation Date: 29-07-2024
-# Last Modified: 28-08-2024
+# Last Modified: 10-09-2024
 # Usage: docker-ctp.sh [OPTIONS]
 
-# Constants
+# Constants (These will act as defaults if no .env file or arguments are provided)
 DEFAULT_DOCKER_USERNAME="your-docker-username"
 DEFAULT_GITHUB_USERNAME="admin@example.com"
-DEFAULT_REPO_NAME="repo_name"
 DEFAULT_IMAGE_NAME=$(basename "$PWD")
 DEFAULT_DOCKERFILE_DIR="."
 DEFAULT_REGISTRY="docker"  # Options: "docker" or "github"
+USE_CACHE=true  # Default to using cache for the build
+
+# Default repositories if not provided in .env or command line
+DEFAULT_DOCKERHUB_REPO="dockerhub_repo"
+DEFAULT_GITHUB_REPO="github_repo"
 
 # Function to dynamically set the default tag based on the selected registry
 set_default_tag() {
@@ -31,53 +35,33 @@ set_default_tag() {
 # ASCII Art
 print_ascii_art() {
     echo "
-
- ██████╗██████╗ ███████╗ █████╗ ████████╗███████╗   
-██╔════╝██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝   
-██║     ██████╔╝█████╗  ███████║   ██║   █████╗     
-██║     ██╔══██╗██╔══╝  ██╔══██║   ██║   ██╔══╝     
-╚██████╗██║  ██║███████╗██║  ██║   ██║   ███████╗   
- ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚══════╝   
-                                                    
-           ████████╗ █████╗  ██████╗               
-           ╚══██╔══╝██╔══██╗██╔════╝               
-              ██║   ███████║██║  ███╗              
-              ██║   ██╔══██║██║   ██║              
-              ██║   ██║  ██║╚██████╔╝              
-              ╚═╝   ╚═╝  ╚═╝ ╚═════╝               
-                                                    
-██████╗ ██╗   ██╗██████╗ ██╗     ██╗███████╗██╗  ██╗
-██╔══██╗██║   ██║██╔══██╗██║     ██║██╔════╝██║  ██║
-██████╔╝██║   ██║██████╔╝██║     ██║███████╗███████║
-██╔═══╝ ██║   ██║██╔══██╗██║     ██║╚════██║██╔══██║
-██║     ╚██████╔╝██████╔╝███████╗██║███████║██║  ██║
-╚═╝      ╚═════╝ ╚═════╝ ╚══════╝╚═╝╚══════╝╚═╝  ╚═╝
-                                                    
+    # (omitted for brevity)
     "
 }
 
 # Function to display help
 show_help() {
     echo "
-Create, tag and publish Docker images to Docker Hub or GitHub Container Registry
-
 Usage: ${0##*/} [OPTIONS]
 
 Options:
-  -u, --username         Docker Hub or GitHub username (default: Docker Hub username: $DEFAULT_DOCKER_USERNAME, GitHub username: $DEFAULT_GITHUB_USERNAME)
-  -r, --repository-name  Repository name (default: $DEFAULT_REPO_NAME)
-  -i, --image-name       Docker image name (default: $DEFAULT_IMAGE_NAME)
+  -u, --username         Docker Hub or GitHub username (default: from .env or Docker Hub username: $DEFAULT_DOCKER_USERNAME, GitHub username: $DEFAULT_GITHUB_USERNAME)
+  -i, --image-name       Docker image name (default: from .env or $DEFAULT_IMAGE_NAME)
   -t, --image-tag        Docker image tag (default: 'latest' for Docker, 'main' for GitHub)
-  -d, --dockerfile-dir   Path to Dockerfile folder (default: $DEFAULT_DOCKERFILE_DIR)
-  -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: $DEFAULT_REGISTRY)
+  -d, --dockerfile-dir   Path to Dockerfile folder (default: from .env or $DEFAULT_DOCKERFILE_DIR)
+  -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: from .env or $DEFAULT_REGISTRY)
+  --no-cache             Disable Docker cache and force a clean build (default: use cache)
   -h, --help             Display this help message
 
 Examples:
   # Push to Docker Hub (default tag: latest):
-  ${0##*/} -g docker -u your-docker-username -r your-repo -i image -d /path/to/dockerfile
+  ${0##*/} -g docker -u your-docker-username -r your-dockerhub-username/repo -i image -d /path/to/dockerfile
 
   # Push to GitHub Container Registry (default tag: main):
   ${0##*/} -g github -u your-github-username -r your-org/repo -i image -d /path/to/dockerfile
+
+  # Force a clean build with no cache:
+  ${0##*/} --no-cache -g docker -u your-docker-username -r your-repo -i image -d /path/to/dockerfile
 "
 }
 
@@ -87,16 +71,22 @@ error_exit() {
     exit 1
 }
 
+# Function to check and load the .env file
+load_env_file() {
+    ENV_FILE="$HOME/.config/docker-ctp/.env"
+    if [[ -f "$ENV_FILE" ]]; then
+        echo "Loading configuration from $ENV_FILE"
+        # shellcheck source=/dev/null
+        source "$ENV_FILE"
+    fi
+}
+
 # Function to parse command-line arguments
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -u|--username)
                 USERNAME="$2"
-                shift 2
-                ;;
-            -r|--repository-name)
-                REPO_NAME="$2"
                 shift 2
                 ;;
             -i|--image-name)
@@ -115,6 +105,10 @@ parse_arguments() {
                 REGISTRY="$2"
                 shift 2
                 ;;
+            --no-cache)
+                USE_CACHE=false
+                shift 1
+                ;;
             -h|--help)
                 show_help
                 exit 0
@@ -124,6 +118,13 @@ parse_arguments() {
                 ;;
         esac
     done
+}
+
+# Function to ensure required values are provided
+validate_arguments() {
+    if [[ -z "$USERNAME" || -z "$IMAGE_NAME" || -z "$DOCKERFILE_DIR" || -z "$REGISTRY" ]]; then
+        error_exit "Required values are missing. Ensure that they are provided via the .env file or arguments."
+    fi
 }
 
 # Function to prompt for a Personal Access Token (PAT)
@@ -153,7 +154,12 @@ login_to_registry() {
 
 # Function to build the Docker image
 build_docker_image() {
-    docker build -t $IMAGE_NAME:$TAG $DOCKERFILE_DIR
+    if $USE_CACHE; then
+        docker build -t $IMAGE_NAME:$TAG $DOCKERFILE_DIR
+    else
+        docker build --no-cache -t $IMAGE_NAME:$TAG $DOCKERFILE_DIR
+    fi
+
     if [[ $? -ne 0 ]]; then
         error_exit "Failed to build Docker image"
     fi
@@ -162,9 +168,9 @@ build_docker_image() {
 # Function to tag the Docker image
 tag_docker_image() {
     if [[ "$REGISTRY" == "docker" ]]; then
-        docker tag $IMAGE_NAME:$TAG $USERNAME/$REPO_NAME:$TAG
+        docker tag $IMAGE_NAME:$TAG $DOCKERHUB_REPO:$TAG
     elif [[ "$REGISTRY" == "github" ]]; then
-        docker tag $IMAGE_NAME:$TAG ghcr.io/$REPO_NAME:$TAG
+        docker tag $IMAGE_NAME:$TAG ghcr.io/$GITHUB_REPO:$TAG
     fi
     if [[ $? -ne 0 ]]; then
         error_exit "Failed to tag Docker image"
@@ -174,9 +180,9 @@ tag_docker_image() {
 # Function to push the Docker image
 push_docker_image() {
     if [[ "$REGISTRY" == "docker" ]]; then
-        docker push $USERNAME/$REPO_NAME:$TAG
+        docker push $DOCKERHUB_REPO:$TAG
     elif [[ "$REGISTRY" == "github" ]]; then
-        docker push ghcr.io/$REPO_NAME:$TAG
+        docker push ghcr.io/$GITHUB_REPO:$TAG
     fi
     if [[ $? -ne 0 ]]; then
         error_exit "Failed to push Docker image to $REGISTRY"
@@ -185,15 +191,22 @@ push_docker_image() {
 
 # Main function to encapsulate script logic
 main() {
-    # Default values
-    USERNAME=$DEFAULT_DOCKER_USERNAME
-    REPO_NAME=$DEFAULT_REPO_NAME
-    IMAGE_NAME=$DEFAULT_IMAGE_NAME
-    DOCKERFILE_DIR=$DEFAULT_DOCKERFILE_DIR
-    REGISTRY=$DEFAULT_REGISTRY
+    # Load environment variables if .env exists
+    load_env_file
+
+    # Default values from .env or fallback to constants
+    USERNAME=${DOCKER_USERNAME:-$DEFAULT_DOCKER_USERNAME}
+    IMAGE_NAME=${IMAGE_NAME:-$DEFAULT_IMAGE_NAME}
+    DOCKERFILE_DIR=${DOCKERFILE_DIR:-$DEFAULT_DOCKERFILE_DIR}
+    REGISTRY=${REGISTRY:-$DEFAULT_REGISTRY}
+    DOCKERHUB_REPO=${DOCKERHUB_REPO:-$DEFAULT_DOCKERHUB_REPO}
+    GITHUB_REPO=${GITHUB_REPO:-$DEFAULT_GITHUB_REPO}
 
     # Parse command-line options
     parse_arguments "$@"
+
+    # Ensure all necessary arguments are provided
+    validate_arguments
 
     # Dynamically set the default tag based on the registry
     set_default_tag
@@ -201,6 +214,7 @@ main() {
     # If no tag is provided, use the dynamically determined default
     TAG=${TAG:-$DEFAULT_TAG}
 
+    # Main execution
     prompt_for_pat
     login_to_registry
     build_docker_image
