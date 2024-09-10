@@ -3,30 +3,34 @@ set -euo pipefail
 
 # Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.2.7
+# Version: 0.2.9
 # License: MIT
 # Creation Date: 29-07-2024
 # Last Modified: 10-09-2024
 # Usage: docker-ctp.sh [OPTIONS]
 
 # Constants (These will act as defaults if no .env file or arguments are provided)
-DEFAULT_DOCKER_USERNAME="your-docker-username"
-DEFAULT_GITHUB_USERNAME="admin@example.com"
-DEFAULT_IMAGE_NAME=$(basename "$PWD")
+DEFAULT_DOCKER_USERNAME="${USER}"
+DEFAULT_GITHUB_USERNAME="${USER}"
+DEFAULT_IMAGE_NAME="basename ${PWD}"
 DEFAULT_DOCKERFILE_DIR="."
 DEFAULT_REGISTRY="docker"  # Options: "docker" or "github"
 USE_CACHE=true  # Default to using cache for the build
 
 # Default repositories if not provided in .env or command line
-DEFAULT_DOCKERHUB_REPO="dockerhub_repo"
-DEFAULT_GITHUB_REPO="github_repo"
+DEFAULT_DOCKERHUB_REPO="dockerhub-user/static-repository-name"
+DEFAULT_GITHUB_REPO="github-user/static-repository-name"
+
+# Default tags if not provided in .env or command line
+DEFAULT_DOCKERHUB_TAG="latest"
+DEFAULT_GITHUB_TAG="main"
 
 # Function to dynamically set the default tag based on the selected registry
 set_default_tag() {
     if [[ "$REGISTRY" == "docker" ]]; then
-        DEFAULT_TAG="latest"
+        TAG=${DOCKERHUB_DEFAULT_TAG:-$DEFAULT_DOCKERHUB_TAG}
     elif [[ "$REGISTRY" == "github" ]]; then
-        DEFAULT_TAG="main"
+        TAG=${GITHUB_DEFAULT_TAG:-$DEFAULT_GITHUB_TAG}
     else
         error_exit "Unknown registry: $REGISTRY"
     fi
@@ -46,12 +50,26 @@ Usage: ${0##*/} [OPTIONS]
 
 Options:
   -u, --username         Docker Hub or GitHub username (default: from .env or Docker Hub username: $DEFAULT_DOCKER_USERNAME, GitHub username: $DEFAULT_GITHUB_USERNAME)
-  -i, --image-name       Docker image name (default: from .env or $DEFAULT_IMAGE_NAME)
+  -i, --image-name       Docker image name (default: from .env or dynamically set based on directory name if DYNAMIC_VALUES=true)
   -t, --image-tag        Docker image tag (default: 'latest' for Docker, 'main' for GitHub)
   -d, --dockerfile-dir   Path to Dockerfile folder (default: from .env or $DEFAULT_DOCKERFILE_DIR)
   -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: from .env or $DEFAULT_REGISTRY)
   --no-cache             Disable Docker cache and force a clean build (default: use cache)
   -h, --help             Display this help message
+
+Environment File:
+  The script will automatically look for an .env file in ~/.config/docker-ctp/.env to load default values for the required options.
+  The .env file should contain the following variables:
+    - DOCKER_USERNAME: Your Docker Hub username
+    - GITHUB_USERNAME: Your GitHub username
+    - DOCKERHUB_REPO: DockerHub repository (if DYNAMIC_VALUES=false)
+    - GITHUB_REPO: GitHub repository (if DYNAMIC_VALUES=false)
+    - IMAGE_NAME: The name of the Docker image (if DYNAMIC_VALUES=false)
+    - DYNAMIC_VALUES: Set to "true" to dynamically set repository names and image name based on the current directory
+    - DOCKERFILE_DIR: Path to Dockerfile directory
+    - REGISTRY: Target registry ("docker" or "github")
+    - DOCKERHUB_DEFAULT_TAG: Default DockerHub tag (default: latest)
+    - GITHUB_DEFAULT_TAG: Default GitHub tag (default: main)
 
 Examples:
   # Push to Docker Hub (default tag: latest):
@@ -127,6 +145,16 @@ validate_arguments() {
     fi
 }
 
+# Function to dynamically set repository names and image name based on directory if DYNAMIC_VALUES=true
+set_dynamic_values() {
+    if [[ "${DYNAMIC_VALUES:-false}" == "true" ]]; then
+        IMAGE_NAME="$(basename "$PWD")"
+        DOCKERHUB_REPO="${DOCKER_USERNAME}/$IMAGE_NAME"
+        GITHUB_REPO="${GITHUB_USERNAME}/$IMAGE_NAME"
+        echo "Dynamic values enabled. Using IMAGE_NAME: $IMAGE_NAME, DOCKERHUB_REPO: $DOCKERHUB_REPO, GITHUB_REPO: $GITHUB_REPO"
+    fi
+}
+
 # Function to prompt for a Personal Access Token (PAT)
 prompt_for_pat() {
     if [[ "$REGISTRY" == "docker" ]]; then
@@ -193,6 +221,9 @@ push_docker_image() {
 main() {
     # Load environment variables if .env exists
     load_env_file
+
+    # Set dynamic values if DYNAMIC_VALUES=true
+    set_dynamic_values
 
     # Default values from .env or fallback to constants
     USERNAME=${DOCKER_USERNAME:-$DEFAULT_DOCKER_USERNAME}
