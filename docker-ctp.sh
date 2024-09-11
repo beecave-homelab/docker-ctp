@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.2.9
+# Version: 0.3.0
 # License: MIT
 # Creation Date: 29-07-2024
 # Last Modified: 10-09-2024
@@ -12,14 +12,10 @@ set -euo pipefail
 # Constants (These will act as defaults if no .env file or arguments are provided)
 DEFAULT_DOCKER_USERNAME="${USER}"
 DEFAULT_GITHUB_USERNAME="${USER}"
-DEFAULT_IMAGE_NAME="basename ${PWD}"
+DEFAULT_IMAGE_NAME="$(basename "$PWD")"
 DEFAULT_DOCKERFILE_DIR="."
 DEFAULT_REGISTRY="docker"  # Options: "docker" or "github"
 USE_CACHE=true  # Default to using cache for the build
-
-# Default repositories if not provided in .env or command line
-DEFAULT_DOCKERHUB_REPO="dockerhub-user/static-repository-name"
-DEFAULT_GITHUB_REPO="github-user/static-repository-name"
 
 # Default tags if not provided in .env or command line
 DEFAULT_DOCKERHUB_TAG="latest"
@@ -39,7 +35,21 @@ set_default_tag() {
 # ASCII Art
 print_ascii_art() {
     echo "
-    # (omitted for brevity)
+ 
+██████   ██████   ██████ ██   ██ ███████ ██████  
+██   ██ ██    ██ ██      ██  ██  ██      ██   ██ 
+██   ██ ██    ██ ██      █████   █████   ██████  
+██   ██ ██    ██ ██      ██  ██  ██      ██   ██ 
+██████   ██████   ██████ ██   ██ ███████ ██   ██ 
+                                                 
+                                                 
+             ██████ ████████ ██████                  
+            ██         ██    ██   ██                 
+            ██         ██    ██████                  
+            ██         ██    ██                      
+             ██████    ██    ██                      
+                                                 
+                                                 
     "
 }
 
@@ -49,37 +59,23 @@ show_help() {
 Usage: ${0##*/} [OPTIONS]
 
 Options:
-  -u, --username         Docker Hub or GitHub username (default: from .env or Docker Hub username: $DEFAULT_DOCKER_USERNAME, GitHub username: $DEFAULT_GITHUB_USERNAME)
-  -i, --image-name       Docker image name (default: from .env or dynamically set based on directory name if DYNAMIC_VALUES=true)
+  -u, --username         Docker Hub or GitHub username (default: $DEFAULT_DOCKER_USERNAME)
+  -i, --image-name       Docker image name (default: dynamically set based on current directory name)
   -t, --image-tag        Docker image tag (default: 'latest' for Docker, 'main' for GitHub)
-  -d, --dockerfile-dir   Path to Dockerfile folder (default: from .env or $DEFAULT_DOCKERFILE_DIR)
-  -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: from .env or $DEFAULT_REGISTRY)
+  -d, --dockerfile-dir   Path to Dockerfile folder (default: $DEFAULT_DOCKERFILE_DIR)
+  -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: $DEFAULT_REGISTRY)
   --no-cache             Disable Docker cache and force a clean build (default: use cache)
   -h, --help             Display this help message
 
-Environment File:
-  The script will automatically look for an .env file in ~/.config/docker-ctp/.env to load default values for the required options.
-  The .env file should contain the following variables:
-    - DOCKER_USERNAME: Your Docker Hub username
-    - GITHUB_USERNAME: Your GitHub username
-    - DOCKERHUB_REPO: DockerHub repository (if DYNAMIC_VALUES=false)
-    - GITHUB_REPO: GitHub repository (if DYNAMIC_VALUES=false)
-    - IMAGE_NAME: The name of the Docker image (if DYNAMIC_VALUES=false)
-    - DYNAMIC_VALUES: Set to "true" to dynamically set repository names and image name based on the current directory
-    - DOCKERFILE_DIR: Path to Dockerfile directory
-    - REGISTRY: Target registry ("docker" or "github")
-    - DOCKERHUB_DEFAULT_TAG: Default DockerHub tag (default: latest)
-    - GITHUB_DEFAULT_TAG: Default GitHub tag (default: main)
-
 Examples:
   # Push to Docker Hub (default tag: latest):
-  ${0##*/} -g docker -u your-docker-username -r your-dockerhub-username/repo -i image -d /path/to/dockerfile
+  ${0##*/} -g docker -u your-docker-username -i image -d /path/to/dockerfile
 
   # Push to GitHub Container Registry (default tag: main):
-  ${0##*/} -g github -u your-github-username -r your-org/repo -i image -d /path/to/dockerfile
+  ${0##*/} -g github -u your-github-username -i image -d /path/to/dockerfile
 
   # Force a clean build with no cache:
-  ${0##*/} --no-cache -g docker -u your-docker-username -r your-repo -i image -d /path/to/dockerfile
+  ${0##*/} --no-cache -g docker -u your-docker-username -i image -d /path/to/dockerfile
 "
 }
 
@@ -91,11 +87,22 @@ error_exit() {
 
 # Function to check and load the .env file
 load_env_file() {
-    ENV_FILE="$HOME/.config/docker-ctp/.env"
+    # Check for .env file in the current working directory first
+    ENV_FILE="./.env"
     if [[ -f "$ENV_FILE" ]]; then
-        echo "Loading configuration from $ENV_FILE"
+        echo "Loading configuration from $ENV_FILE (current working directory)"
         # shellcheck source=/dev/null
         source "$ENV_FILE"
+    else
+        # Fall back to the .env file in the home directory
+        ENV_FILE="$HOME/.config/docker-ctp/.env"
+        if [[ -f "$ENV_FILE" ]]; then
+            echo "Loading configuration from $ENV_FILE (home directory)"
+            # shellcheck source=/dev/null
+            source "$ENV_FILE"
+        else
+            echo "No .env file found in current directory or home directory"
+        fi
     fi
 }
 
@@ -141,18 +148,16 @@ parse_arguments() {
 # Function to ensure required values are provided
 validate_arguments() {
     if [[ -z "$USERNAME" || -z "$IMAGE_NAME" || -z "$DOCKERFILE_DIR" || -z "$REGISTRY" ]]; then
-        error_exit "Required values are missing. Ensure that they are provided via the .env file or arguments."
+        error_exit "Required values are missing. Ensure that they are provided via arguments."
     fi
 }
 
-# Function to dynamically set repository names and image name based on directory if DYNAMIC_VALUES=true
-set_dynamic_values() {
-    if [[ "${DYNAMIC_VALUES:-false}" == "true" ]]; then
-        IMAGE_NAME="$(basename "$PWD")"
-        DOCKERHUB_REPO="${DOCKER_USERNAME}/$IMAGE_NAME"
-        GITHUB_REPO="${GITHUB_USERNAME}/$IMAGE_NAME"
-        echo "Dynamic values enabled. Using IMAGE_NAME: $IMAGE_NAME, DOCKERHUB_REPO: $DOCKERHUB_REPO, GITHUB_REPO: $GITHUB_REPO"
-    fi
+# Function to dynamically set repository names based on directory
+set_dynamic_repos() {
+    IMAGE_NAME="$(basename "$PWD")"
+    DOCKERHUB_REPO="${DOCKER_USERNAME}/$IMAGE_NAME"
+    GITHUB_REPO="${GITHUB_USERNAME}/$IMAGE_NAME"
+    echo "Using IMAGE_NAME: $IMAGE_NAME, DOCKERHUB_REPO: $DOCKERHUB_REPO, GITHUB_REPO: $GITHUB_REPO"
 }
 
 # Function to prompt for a Personal Access Token (PAT)
@@ -222,16 +227,13 @@ main() {
     # Load environment variables if .env exists
     load_env_file
 
-    # Set dynamic values if DYNAMIC_VALUES=true
-    set_dynamic_values
+    # Set dynamic values for repositories and image name based on the current directory
+    set_dynamic_repos
 
     # Default values from .env or fallback to constants
     USERNAME=${DOCKER_USERNAME:-$DEFAULT_DOCKER_USERNAME}
-    IMAGE_NAME=${IMAGE_NAME:-$DEFAULT_IMAGE_NAME}
     DOCKERFILE_DIR=${DOCKERFILE_DIR:-$DEFAULT_DOCKERFILE_DIR}
     REGISTRY=${REGISTRY:-$DEFAULT_REGISTRY}
-    DOCKERHUB_REPO=${DOCKERHUB_REPO:-$DEFAULT_DOCKERHUB_REPO}
-    GITHUB_REPO=${GITHUB_REPO:-$DEFAULT_GITHUB_REPO}
 
     # Parse command-line options
     parse_arguments "$@"
