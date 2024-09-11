@@ -53,29 +53,43 @@ print_ascii_art() {
     "
 }
 
-# Function to display help
+# Function to display help with syntax highlighting
+# Function to display help with syntax highlighting
 show_help() {
-    echo "
-Usage: ${0##*/} [OPTIONS]
+    # Load dynamic values based on the current working directory
+    IMAGE_NAME="$(basename "$PWD")"
+    DOCKERHUB_REPO="${DOCKER_USERNAME}/${IMAGE_NAME}"
+    GITHUB_REPO="${GITHUB_USERNAME}/${IMAGE_NAME}"
 
-Options:
-  -u, --username         Docker Hub or GitHub username (default: $DEFAULT_DOCKER_USERNAME)
-  -i, --image-name       Docker image name (default: dynamically set based on current directory name)
-  -t, --image-tag        Docker image tag (default: 'latest' for Docker, 'main' for GitHub)
-  -d, --dockerfile-dir   Path to Dockerfile folder (default: $DEFAULT_DOCKERFILE_DIR)
-  -g, --registry         Target registry ("docker" for Docker Hub, "github" for GitHub Container Registry; default: $DEFAULT_REGISTRY)
-  --no-cache             Disable Docker cache and force a clean build (default: use cache)
-  -h, --help             Display this help message
+    # Display the usage and examples using dynamic and .env file values with colors
+    echo -e "
+\033[33mUsage:\033[0m ${0##*/} [OPTIONS]
 
-Examples:
-  # Push to Docker Hub (default tag: latest):
-  ${0##*/} -g docker -u your-docker-username -i image -d /path/to/dockerfile
+\033[33mOptions:\033[0m
+  \033[33m-u, --username\033[0m         Docker Hub or GitHub username (default: Docker Hub: $DOCKER_USERNAME, GitHub: $GITHUB_USERNAME)
+  \033[33m-i, --image-name\033[0m       Docker image name (default: $IMAGE_NAME)
+  \033[33m-t, --image-tag\033[0m        Docker image tag (default: 'latest' for Docker, 'main' for GitHub)
+  \033[33m-d, --dockerfile-dir\033[0m   Path to Dockerfile folder (default: $DOCKERFILE_DIR)
+  \033[33m-g, --registry\033[0m         Target registry (default: $REGISTRY; 'docker' for Docker Hub, 'github' for GitHub)
+  \033[33m--no-cache\033[0m             Disable Docker cache and force a clean build (default: use cache)
+  \033[33m-h, --help\033[0m             Display this help message
 
-  # Push to GitHub Container Registry (default tag: main):
-  ${0##*/} -g github -u your-github-username -i image -d /path/to/dockerfile
+\033[33mExamples:\033[0m
 
-  # Force a clean build with no cache:
-  ${0##*/} --no-cache -g docker -u your-docker-username -i image -d /path/to/dockerfile
+  \033[32m# Example: Push to Docker Hub with default values (tag: latest)\033[0m
+  ${0##*/} -g docker -u $DOCKER_USERNAME -i $IMAGE_NAME -d $DOCKERFILE_DIR
+  
+  \033[32m# Example: Push to GitHub Container Registry with default values (tag: main)\033[0m
+  ${0##*/} -g github -u $GITHUB_USERNAME -i $IMAGE_NAME -d $DOCKERFILE_DIR
+
+  \033[32m# Example: Force a clean build without cache and push to Docker Hub\033[0m
+  ${0##*/} --no-cache -g docker -u $DOCKER_USERNAME -i $IMAGE_NAME -d $DOCKERFILE_DIR
+
+  \033[32m# Example: Push to Docker Hub with a custom tag 'v1.0.0'\033[0m
+  ${0##*/} -g docker -u $DOCKER_USERNAME -i $IMAGE_NAME -t v1.0.0 -d $DOCKERFILE_DIR
+
+  \033[32m# Example: Push to GitHub Container Registry with a custom tag 'v1.0.0'\033[0m
+  ${0##*/} -g github -u $GITHUB_USERNAME -i $IMAGE_NAME -t v1.0.0 -d $DOCKERFILE_DIR
 "
 }
 
