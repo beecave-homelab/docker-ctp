@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.3.0
+# Version: 0.3.1
 # License: MIT
 # Creation Date: 29-07-2024
-# Last Modified: 10-09-2024
+# Last Modified: 11-09-2024
 # Usage: docker-ctp.sh [OPTIONS]
 
 # Constants (These will act as defaults if no .env file or arguments are provided)
@@ -54,14 +54,9 @@ print_ascii_art() {
 }
 
 # Function to display help with syntax highlighting
-# Function to display help with syntax highlighting
-show_help() {
-    # Load dynamic values based on the current working directory
-    IMAGE_NAME="$(basename "$PWD")"
-    DOCKERHUB_REPO="${DOCKER_USERNAME}/${IMAGE_NAME}"
-    GITHUB_REPO="${GITHUB_USERNAME}/${IMAGE_NAME}"
+# Display the usage and examples using dynamic and .env file values with colors
 
-    # Display the usage and examples using dynamic and .env file values with colors
+show_help() {
     echo -e "
 \033[33mUsage:\033[0m ${0##*/} [OPTIONS]
 
