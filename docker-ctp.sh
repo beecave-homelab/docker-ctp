@@ -96,22 +96,14 @@ error_exit() {
 
 # Function to check and load the .env file
 load_env_file() {
-    # Check for .env file in the current working directory first
-    ENV_FILE="./.env"
+    # Check if the .env file exists in the home directory
+    ENV_FILE="$HOME/.config/docker-ctp/.env"
     if [[ -f "$ENV_FILE" ]]; then
-        echo "Loading configuration from $ENV_FILE (current working directory)"
+        echo "Loading configuration from $ENV_FILE (home directory)"
         # shellcheck source=/dev/null
         source "$ENV_FILE"
     else
-        # Fall back to the .env file in the home directory
-        ENV_FILE="$HOME/.config/docker-ctp/.env"
-        if [[ -f "$ENV_FILE" ]]; then
-            echo "Loading configuration from $ENV_FILE (home directory)"
-            # shellcheck source=/dev/null
-            source "$ENV_FILE"
-        else
-            echo "No .env file found in current directory or home directory"
-        fi
+        echo "No .env file found in current directory or home directory"
     fi
 }
 
