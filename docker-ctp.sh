@@ -832,7 +832,7 @@ generate_config_files() {
     log_info "Generating default configuration files..."
     
     local config_locations=(
-        "./.env"                                    # Current directory (project-level)
+        "$HOME/.config/docker-ctp/.env"  # User config directory
     )
     
     local generated_files=()
@@ -1009,12 +1009,12 @@ EOF
         done
         log_info ""
         log_info "🔧 Next steps:"
-        log_info "  1. Edit .env file(s) with your actual values"
-        log_info "  2. Set authentication tokens (DOCKER_TOKEN/GITHUB_TOKEN)"
-        log_info "  3. Review and customize .dockerignore as needed"
+        log_info "  1. Edit the .env file located at '$HOME/.config/docker-ctp/.env' with your actual values"
+        log_info "  2. Set authentication tokens (DOCKER_TOKEN/GITHUB_TOKEN) in '$HOME/.config/docker-ctp/.env'"
+        log_info "  3. Review and customize .dockerignore in the current directory as needed"
         log_info "  4. Run: ${0##*/} --dry-run to test your configuration"
         log_info ""
-        log_warning "⚠️  Remember to add .env to your .gitignore to protect sensitive tokens!"
+        log_warning "⚠️  Remember to add .env files (if storing them elsewhere) to your global .gitignore to protect sensitive tokens!"
     else
         log_info "No new configuration files were generated"
     fi
