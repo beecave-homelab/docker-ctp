@@ -198,8 +198,10 @@ print_ascii_art() {
 
 # Function to initialize variables early (before help can be called)
 init_variables() {
+    local init_mode="${1:-normal}" # Parameter to control behavior, e.g., for silent help init
+
     # Load environment variables if .env exists first
-    load_env_file
+    load_env_file "$init_mode"
     
     # Initialize core username variables with safe defaults BEFORE calling set_dynamic_repos
     DOCKER_USERNAME=${DOCKER_USERNAME:-$DEFAULT_DOCKER_USERNAME}
@@ -211,8 +213,9 @@ init_variables() {
     # Now safe to set dynamic values for repositories 
     set_dynamic_repos
     
+    # Initialize USERNAME to ensure it's set. It will be populated by CLI option or later logic.
+    USERNAME=""
     # Initialize remaining variables with safe defaults for help display
-    USERNAME=${USERNAME:-$DOCKER_USERNAME}
     TAG=${TAG:-""}
     
     # Phase 2: Set up cleanup trap
@@ -247,7 +250,7 @@ early_arg_parse() {
                 exit 0
                 ;;
             -h|--help)
-                init_variables  # Initialize variables for help display
+                init_variables "silent_for_help"  # Initialize variables for help display
                 show_help
                 exit 0
                 ;;
@@ -317,10 +320,10 @@ error_exit() {
 
 # Function to check and load the .env file
 load_env_file() {
+    local init_mode="${1:-normal}" # Parameter from init_variables
     local env_loaded=false
     local env_locations=(
         "./.env"                                    # Current directory (highest priority)
-        "./.config/docker-ctp/.env"                # Project-specific config
         "$HOME/.config/docker-ctp/.env"            # User config directory
         "$HOME/.docker-ctp/.env"                   # User home directory (alternative)
         "/etc/docker-ctp/.env"                     # System-wide config (lowest priority)
@@ -329,7 +332,9 @@ load_env_file() {
     # Try each location in priority order
     for env_file in "${env_locations[@]}"; do
         if [[ -f "$env_file" && -r "$env_file" ]]; then
-            log_info "Loading configuration from $env_file"
+            if [[ "$init_mode" != "silent_for_help" ]]; then
+                log_info "Loading configuration from $env_file"
+            fi
             # shellcheck source=/dev/null
             source "$env_file"
             env_loaded=true
@@ -337,7 +342,7 @@ load_env_file() {
         fi
     done
     
-    if [[ "$env_loaded" == false ]]; then
+    if [[ "$env_loaded" == false && "$init_mode" != "silent_for_help" ]]; then
         log_verbose "No .env file found in any of the standard locations:"
         for location in "${env_locations[@]}"; do
             log_verbose "  - $location"
@@ -616,9 +621,8 @@ validate_arguments() {
 
 # Function to dynamically set repository names based on directory
 set_dynamic_repos() {
-    IMAGE_NAME="$(basename "$PWD")"
-    DOCKERHUB_REPO="${DOCKER_USERNAME}/$IMAGE_NAME"
-    GITHUB_REPO="${GITHUB_USERNAME}/$IMAGE_NAME"
+    DOCKERHUB_REPO="${DOCKER_USERNAME}/${IMAGE_NAME}"
+    GITHUB_REPO="${GITHUB_USERNAME}/${IMAGE_NAME}"
     log_verbose "Using IMAGE_NAME: $IMAGE_NAME, DOCKERHUB_REPO: $DOCKERHUB_REPO, GITHUB_REPO: $GITHUB_REPO"
 }
 
@@ -829,7 +833,6 @@ generate_config_files() {
     
     local config_locations=(
         "./.env"                                    # Current directory (project-level)
-        "./.config/docker-ctp/.env"                # Project-specific config directory
     )
     
     local generated_files=()
@@ -1030,6 +1033,23 @@ main() {
     
     # Parse command-line options
     parse_arguments "$@"
+
+    # Resolve final USERNAME if not set by CLI's -u argument
+    # At this point, REGISTRY variable holds the final registry value (CLI > .env/ENV > default)
+    # DOCKER_USERNAME and GITHUB_USERNAME hold values from .env/ENV/default set in init_variables
+    if [[ -z "$USERNAME" ]]; then # If -u was not used, USERNAME might be empty
+        if [[ "$REGISTRY" == "docker" ]]; then
+            USERNAME="$DOCKER_USERNAME"
+        elif [[ "$REGISTRY" == "github" ]]; then
+            USERNAME="$GITHUB_USERNAME"
+        else
+            # This case should ideally not be reached if REGISTRY validation is robust.
+            # REGISTRY is validated in validate_and_sanitize_inputs to be 'docker' or 'github'.
+            # If somehow it's not, this is an unexpected state.
+            log_warning "Cannot determine default username for registry '$REGISTRY'."
+            # USERNAME will remain empty and caught by validate_arguments if DOCKER_USERNAME/GITHUB_USERNAME were also empty.
+        fi
+    fi
     
     # Check system dependencies (only after parsing arguments)
     check_dependencies
