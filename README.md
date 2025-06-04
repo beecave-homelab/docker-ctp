@@ -59,11 +59,17 @@ The project includes an `install.sh` script that simplifies installation and set
 1. **Clone the repository**:
 
     ```bash
-    git clone <your-repository-url> # Replace with actual URL if public
+    git clone https://git.beecave-homelab.com/lowie/docker-ctp.git
     cd docker-ctp
     ```
 
-2. **Run the installer**:
+2. **Preview installation (dry-run)**:
+
+    ```bash
+    ./install.sh --dry-run
+    ```
+
+3. **Run the installer**:
 
     ```bash
     ./install.sh
@@ -74,19 +80,13 @@ The project includes an `install.sh` script that simplifies installation and set
     - Generate default configuration files if they don't exist
     - Validate the installation
 
-3. **Preview installation (dry-run)**:
-
-    ```bash
-    ./install.sh --dry-run
-    ```
-
 ### Option 2: Manual Installation
 
 1. **Get the script**:
     - Clone the repository (if you want the full project structure):
 
         ```bash
-        git clone <your-repository-url> # Replace with actual URL if public
+        git clone https://git.beecave-homelab.com/lowie/docker-ctp.git
         cd docker-ctp
         ```
 
