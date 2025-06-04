@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Script Description: This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Container Registry.
 # Author: elvee
-# Version: 0.4.0
+# Version: 0.4.1
 # License: MIT
 # Creation Date: 29-07-2024
-# Last Modified: 31-05-2025
+# Last Modified: 04-06-2025
 # Usage: docker-ctp.sh [OPTIONS]
 
 # Constants (These will act as defaults if no .env file or arguments are provided)
@@ -322,32 +322,96 @@ error_exit() {
 load_env_file() {
     local init_mode="${1:-normal}" # Parameter from init_variables
     local env_loaded=false
-    local env_locations=(
-        "./.env"                                    # Current directory (highest priority)
-        "$HOME/.config/docker-ctp/.env"            # User config directory
-        "$HOME/.docker-ctp/.env"                   # User home directory (alternative)
-        "/etc/docker-ctp/.env"                     # System-wide config (lowest priority)
-    )
     
-    # Try each location in priority order
-    for env_file in "${env_locations[@]}"; do
-        if [[ -f "$env_file" && -r "$env_file" ]]; then
-            if [[ "$init_mode" != "silent_for_help" ]]; then
-                log_info "Loading configuration from $env_file"
-            fi
-            # shellcheck source=/dev/null
-            source "$env_file"
-            env_loaded=true
-            break  # Use first found file (highest priority)
+    # Define potential locations in order of priority for attempting to load
+    local paths_to_attempt_load_specifiers=()
+    # Define locations as they would be listed to the user if none are found
+    local paths_logged_if_not_found=()
+
+    # 1. Current directory .env (conditional)
+    local current_dir_dot_env_specifier="./.env" # Path relative to PWD
+    if [[ "$(basename "$PWD")" == "docker-ctp" ]]; then
+        paths_to_attempt_load_specifiers+=("$current_dir_dot_env_specifier")
+        paths_logged_if_not_found+=("$current_dir_dot_env_specifier (in $PWD)")
+    elif [[ "$init_mode" != "silent_for_help" ]]; then
+        log_verbose "Current directory ('$(basename "$PWD")') is not 'docker-ctp'; .env file from this directory will not be loaded."
+        paths_logged_if_not_found+=("$current_dir_dot_env_specifier (skipped, current directory is not 'docker-ctp')")
+    fi
+
+    # Add other standard locations
+    local standard_locations_specifiers=(
+        "$HOME/.config/docker-ctp/.env"
+        "$HOME/.docker-ctp/.env"
+        "/etc/docker-ctp/.env"
+    )
+    paths_to_attempt_load_specifiers+=("${standard_locations_specifiers[@]}")
+    paths_logged_if_not_found+=("${standard_locations_specifiers[@]}")
+    
+    # Deduplicate paths_to_attempt_load_specifiers after resolving them to avoid sourcing twice
+    local unique_resolved_paths_to_source=()
+    local unique_original_specifiers_for_source=() # To keep original for log_info on success
+    local seen_resolved_paths_for_attempt=""
+
+    for path_specifier in "${paths_to_attempt_load_specifiers[@]}"; do
+        local resolved_path
+        if [[ "$path_specifier" == "./.env" ]]; then
+            resolved_path=$(realpath -m "$PWD/$path_specifier" 2>/dev/null || echo "$PWD/$path_specifier")
+        else
+            resolved_path=$(realpath -m "$path_specifier" 2>/dev/null || echo "$path_specifier")
+        fi
+        
+        # Check if we've already seen this resolved path (bash 3.2 compatible)
+        if [[ "$seen_resolved_paths_for_attempt" != *"|$resolved_path|"* ]]; then
+            seen_resolved_paths_for_attempt="$seen_resolved_paths_for_attempt|$resolved_path|"
+            unique_resolved_paths_to_source+=("$resolved_path")
+            unique_original_specifiers_for_source+=("$path_specifier")
         fi
     done
-    
+
+    # Attempt to load from the unique, resolved paths
+    for i in "${!unique_resolved_paths_to_source[@]}"; do
+        local env_file_to_check="${unique_resolved_paths_to_source[$i]}"
+        local original_specifier_for_log="${unique_original_specifiers_for_source[$i]}"
+
+        if [[ -f "$env_file_to_check" && -r "$env_file_to_check" ]]; then
+            if [[ "$init_mode" != "silent_for_help" ]]; then
+                log_info "Loading configuration from $original_specifier_for_log"
+            fi
+            # shellcheck source=/dev/null
+            source "$env_file_to_check"
+            env_loaded=true
+            break # Use first found file
+        fi
+    done
+
     if [[ "$env_loaded" == false && "$init_mode" != "silent_for_help" ]]; then
-        log_verbose "No .env file found in any of the standard locations:"
-        for location in "${env_locations[@]}"; do
-            log_verbose "  - $location"
+        log_verbose "No .env file found or readable in the following checked locations:"
+        
+        # Deduplicate paths_logged_if_not_found for cleaner output for the user
+        local unique_paths_for_final_log_display=()
+        local seen_paths_for_final_log=""
+        for log_path_display in "${paths_logged_if_not_found[@]}"; do
+            # For deduplication, normalize the path string (e.g. resolve ./.env part if present)
+            local normalized_key_for_dedup="$log_path_display"
+            if [[ "$log_path_display" == "./.env (in $PWD)" ]]; then
+                normalized_key_for_dedup=$(realpath -m "$PWD/.env" 2>/dev/null || echo "$PWD/.env")
+            elif [[ "$log_path_display" == "./.env (skipped,"* ]]; then # Match prefix
+                normalized_key_for_dedup="${PWD}/.env_skipped_marker"
+            elif [[ "$log_path_display" == "$HOME/"* || "$log_path_display" == "/etc/"* ]]; then # For absolute-like paths
+                 normalized_key_for_dedup=$(realpath -m "$log_path_display" 2>/dev/null || echo "$log_path_display")
+            fi
+
+            # Check if we've already seen this normalized path (bash 3.2 compatible)
+            if [[ "$seen_paths_for_final_log" != *"|$normalized_key_for_dedup|"* ]]; then
+                seen_paths_for_final_log="$seen_paths_for_final_log|$normalized_key_for_dedup|"
+                unique_paths_for_final_log_display+=("$log_path_display") 
+            fi
         done
-        log_verbose "Using default values and environment variables"
+
+        for location_display_message in "${unique_paths_for_final_log_display[@]}"; do
+            log_verbose "  - $location_display_message"
+        done
+        log_verbose "Using default values and environment variables."
     fi
 }
 
