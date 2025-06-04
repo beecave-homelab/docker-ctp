@@ -4,7 +4,7 @@ This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Cont
 
 ## Versions
 
-**Current version**: 0.4.0
+**Current version**: 0.4.1
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Cont
 ## Badges
 
 ![Shell Script](https://img.shields.io/badge/language-shell-blue)
-![Version](https://img.shields.io/badge/version-0.4.0-brightgreen)
+![Version](https://img.shields.io/badge/version-0.4.1-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
@@ -32,6 +32,7 @@ This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Cont
   - Environment variables.
   - `.env` files (searches multiple standard locations, e.g., `./.env`, `~/.config/docker-ctp/.env`).
   - Clear priority: CLI > ENV > `.env` > Defaults.
+  - **Smart .env Loading**: Only loads `./.env` from current directory if the directory is named "docker-ctp" to avoid conflicts.
 - **Secure Token Handling**: Prioritizes environment variables (`DOCKER_TOKEN`, `GITHUB_TOKEN`) for authentication, with interactive fallback if run in a TTY.
 - **Comprehensive Input Validation**: Sanitizes and validates usernames, image names, tags, paths, and registry choices.
 - **Dry Run Mode**: Use `--dry-run` to simulate all operations without actual execution.
@@ -50,6 +51,36 @@ This script builds, tags, and pushes a Docker image to Docker Hub or GitHub Cont
 - **Helpful Output**: Progress indicators for long operations, clear success/error/warning messages, and ASCII art for flair!
 
 ## Installation
+
+### Option 1: Automated Installation (Recommended)
+
+The project includes an `install.sh` script that simplifies installation and setup:
+
+1. **Clone the repository**:
+
+    ```bash
+    git clone <your-repository-url> # Replace with actual URL if public
+    cd docker-ctp
+    ```
+
+2. **Run the installer**:
+
+    ```bash
+    ./install.sh
+    ```
+
+    This will:
+    - Install `docker-ctp.sh` to `/usr/local/bin/docker-ctp`
+    - Generate default configuration files if they don't exist
+    - Validate the installation
+
+3. **Preview installation (dry-run)**:
+
+    ```bash
+    ./install.sh --dry-run
+    ```
+
+### Option 2: Manual Installation
 
 1. **Get the script**:
     - Clone the repository (if you want the full project structure):
@@ -92,6 +123,12 @@ To use the script, run it with the following command:
 ./docker-ctp.sh [OPTIONS]
 ```
 
+Or if installed system-wide:
+
+```bash
+docker-ctp [OPTIONS]
+```
+
 **Options**:
 
 ```md
@@ -117,20 +154,20 @@ To use the script, run it with the following command:
 
 ```bash
 # Generate default configuration files (.env, .dockerignore)
-./docker-ctp.sh --generate-config
+docker-ctp --generate-config
 
 # Perform a dry run for Docker Hub, assuming .env is configured
-./docker-ctp.sh --dry-run --registry docker
+docker-ctp --dry-run --registry docker
 
 # Build and push to GitHub Container Registry with verbose logging
 # (assumes GITHUB_USERNAME and GITHUB_TOKEN are in .env or ENV)
-./docker-ctp.sh --verbose --registry github --image-name myapp --image-tag v1.0.1
+docker-ctp --verbose --registry github --image-name myapp --image-tag v1.0.1
 
 # Force a clean rebuild (no cache) and push to Docker Hub with a specific Dockerfile location
-./docker-ctp.sh --no-cache --force-rebuild --registry docker -u mydockeruser -i myimage -t latest -d ./build/context
+docker-ctp --no-cache --force-rebuild --registry docker -u mydockeruser -i myimage -t latest -d ./build/context
 
 # Push to GitHub in quiet mode, disable cleanup
-./docker-ctp.sh --quiet --no-cleanup --registry github -u mygituser -i anotherapp -t main
+docker-ctp --quiet --no-cleanup --registry github -u mygituser -i anotherapp -t main
 ```
 
 ## Configuration
@@ -140,7 +177,7 @@ The script offers a flexible configuration system, loading settings in the follo
 1. **Command-line arguments**: Options like `-u`, `-i`, `-g`, etc., always take top priority.
 2. **Environment variables**: You can set script variables (e.g., `DOCKER_USERNAME`, `REGISTRY`, `TAG`, `LOG_LEVEL`) in your shell environment. These will override settings from `.env` files and script defaults.
 3. **`.env` file**: The script automatically searches for and loads an `.env` file from the following locations, using the first one it finds:
-    1. `./.env` (Current project directory - highest priority for `.env` files)
+    1. `./.env` (Current project directory - **only if directory is named "docker-ctp"** - highest priority for `.env` files)
     2. `$HOME/.config/docker-ctp/.env` (User-level global config)
     3. `$HOME/.docker-ctp/.env` (Alternative user-level global config)
     4. `/etc/docker-ctp/.env` (System-wide config - lowest priority for `.env` files)
