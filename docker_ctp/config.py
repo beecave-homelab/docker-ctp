@@ -33,6 +33,7 @@ class Config:
     log_level: str = "normal"
 
     def resolve_username(self) -> None:
+        """Set ``username`` from registry-specific defaults when unset."""
         if not self.username:
             self.username = (
                 self.docker_username
@@ -41,6 +42,7 @@ class Config:
             )
 
     def set_default_tag(self) -> None:
+        """Populate ``tag`` with a sensible default when absent."""
         if not self.tag:
             self.tag = (
                 DEFAULT_DOCKERHUB_TAG

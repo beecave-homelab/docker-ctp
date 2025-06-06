@@ -7,10 +7,10 @@ import logging
 from pathlib import Path
 
 from .config import (
-    Config,
     DEFAULT_DOCKERFILE_DIR,
     DEFAULT_IMAGE_NAME,
     DEFAULT_REGISTRY,
+    Config,
     load_env,
     validate_config,
 )

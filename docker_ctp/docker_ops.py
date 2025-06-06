@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
-from pathlib import Path
 
 from .config import Config
 from .runner import Runner
