@@ -34,6 +34,7 @@ class Config:
     cleanup_on_exit: bool = True
 
     def resolve_username(self) -> None:
+        """Fill in the username if not provided."""
         if not self.username:
             self.username = (
                 self.docker_username
@@ -42,6 +43,7 @@ class Config:
             )
 
     def set_default_tag(self) -> None:
+        """Set a default tag if none was specified."""
         if not self.tag:
             self.tag = (
                 DEFAULT_DOCKERHUB_TAG

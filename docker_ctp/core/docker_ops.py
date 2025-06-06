@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import logging
-import os
 import subprocess
-from pathlib import Path
 
-from .config import Config
-from .modules.auth import get_token
-from .modules.rebuild import image_exists
+from ..config import Config
+from ..utils.auth import get_token
+from ..utils.rebuild import image_exists
 from .runner import Runner
 
 

@@ -11,6 +11,7 @@ class CleanupManager:
     """Manage cleanup of Docker images on exit."""
 
     def __init__(self, dry_run: bool) -> None:
+        """Initialize the manager."""
         self.dry_run = dry_run
         self.images: List[str] = []
 
