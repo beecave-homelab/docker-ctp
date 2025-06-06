@@ -3,21 +3,18 @@
 from __future__ import annotations
 
 import logging
-import os
 import subprocess
-from pathlib import Path
 
-from .config import Config
+from ..config import Config
+from ..utils.auth import get_token
+from ..utils.rebuild import image_exists
 from .runner import Runner
 
 
 def login(config: Config, runner: Runner) -> None:
     """Authenticate to the chosen registry."""
     logging.info("Logging into %s", config.registry)
-    token_env = "DOCKER_TOKEN" if config.registry == "docker" else "GITHUB_TOKEN"
-    token = os.environ.get(token_env)
-    if not token:
-        raise RuntimeError(f"Environment variable {token_env} not set")
+    token = get_token(config.registry)
     registry = "ghcr.io" if config.registry == "github" else None
     cmd = ["docker", "login"]
     if registry:
@@ -33,6 +30,10 @@ def login(config: Config, runner: Runner) -> None:
 def build(config: Config, runner: Runner) -> None:
     """Build the Docker image."""
     tag = f"{config.image_name}:{config.tag}"
+    if not config.force_rebuild and image_exists(tag):
+        logging.info("Image %s already exists - skipping build", tag)
+        return
+
     args = ["docker", "build", "-t", tag]
     if not config.use_cache:
         args.insert(2, "--no-cache")

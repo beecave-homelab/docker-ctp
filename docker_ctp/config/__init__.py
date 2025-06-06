@@ -31,8 +31,10 @@ class Config:
     force_rebuild: bool = False
     dry_run: bool = False
     log_level: str = "normal"
+    cleanup_on_exit: bool = True
 
     def resolve_username(self) -> None:
+        """Fill in the username if not provided."""
         if not self.username:
             self.username = (
                 self.docker_username
@@ -41,6 +43,7 @@ class Config:
             )
 
     def set_default_tag(self) -> None:
+        """Set a default tag if none was specified."""
         if not self.tag:
             self.tag = (
                 DEFAULT_DOCKERHUB_TAG
@@ -77,6 +80,8 @@ def load_env(config: Config) -> None:
         os.environ.get("DOCKERFILE_DIR", str(config.dockerfile_dir))
     )
     config.registry = os.environ.get("REGISTRY", config.registry)
+    if os.environ.get("NO_CLEANUP"):
+        config.cleanup_on_exit = False
 
 
 def validate_config(config: Config) -> None:
