@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-test.txt
+      - name: Lint
+        run: |
+          isort --check docker_ctp tests
+          black --check docker_ctp tests
+          ruff check docker_ctp tests
+          mypy docker_ctp tests
+          pydocstyle docker_ctp
+          pylint docker_ctp
+      - name: Tests
+        run: |
+          pytest --cov=docker_ctp --cov-report=term-missing
