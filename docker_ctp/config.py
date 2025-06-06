@@ -31,6 +31,7 @@ class Config:
     force_rebuild: bool = False
     dry_run: bool = False
     log_level: str = "normal"
+    cleanup_on_exit: bool = True
 
     def resolve_username(self) -> None:
         if not self.username:
@@ -77,6 +78,8 @@ def load_env(config: Config) -> None:
         os.environ.get("DOCKERFILE_DIR", str(config.dockerfile_dir))
     )
     config.registry = os.environ.get("REGISTRY", config.registry)
+    if os.environ.get("NO_CLEANUP"):
+        config.cleanup_on_exit = False
 
 
 def validate_config(config: Config) -> None:
