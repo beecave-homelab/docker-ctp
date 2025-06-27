@@ -71,6 +71,8 @@ pdm install
 ├── docker_ctp/           # Main Python package
 │   ├── cli/              # Click-based CLI entrypoint and main workflow
 │   ├── core/             # Docker logic (build, tag, push)
+│   │   ├── docker_ops.py
+│   │   └── service.py    # Service layer for core application logic
 │   ├── config/           # Refactored Config dataclasses and env loading
 │   ├── exceptions.py     # Custom exception classes for standardized error handling
 │   ├── utils/            # Utilities: logging, rebuild, validation, etc.
@@ -83,6 +85,7 @@ pdm install
 │   ├── __init__.py       # Python test package initializer
 │   ├── test_cli.py       # Pytest suite for CLI
 │   ├── test_config.py    # Pytest suite for Config
+│   ├── test_service.py   # Pytest suite for the DockerService
 │   ├── test_docker_ctp.sh  # BATS suite for shell script
 │   └── test_smart_rebuild.sh # BATS suite for smart rebuild
 ├── to-do/                # Refactoring and improvement plans
@@ -96,10 +99,17 @@ pdm install
 
 ## Architecture Highlights
 
-- [docker_ctp/core/docker_ops.py](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/docker_ctp/core/docker_ops.py): High-level Docker build, tag, push logic with error handling
-- [docker_ctp/cli/**init**.py](docker_ctp/cli/__init__.py): Click-based CLI entrypoint and main workflow, integrated with `Config` and exception handling
-- [docker_ctp/config/**init**.py](docker_ctp/config/__init__.py): Refactored `Config` class with nested dataclasses and constructors
-- [docker_ctp/exceptions.py](docker_ctp/exceptions.py): Centralized custom exceptions for consistent error reporting
+The architecture has been refactored to decouple the command-line interface from the core application logic. This was achieved by introducing a **Service Layer** that encapsulates the primary business logic and uses **Dependency Injection** to manage its dependencies.
+
+- **Service-Oriented Design**: The new `DockerService` in `docker_ctp/core/service.py` centralizes the orchestration of Docker operations (build, tag, push). This service acts as the single source of truth for the application's workflow.
+- **Dependency Injection**: The `DockerService` receives its dependencies (like `Config`, `Runner`, and `CleanupManager`) via its constructor. This inverts control, making the service easier to test in isolation and more flexible to future changes.
+- **Thin CLI Layer**: The `docker_ctp/cli/__init__.py` module is now a lightweight interface responsible only for parsing user input, preparing dependencies, and invoking the `DockerService`.
+
+- [docker_ctp/core/service.py](docker_ctp/core/service.py): The new service layer that orchestrates the build-tag-push workflow.
+- [docker_ctp/core/docker_ops.py](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/docker_ctp/core/docker_ops.py): High-level Docker build, tag, push logic with error handling.
+- [docker_ctp/cli/__init__.py](docker_ctp/cli/__init__.py): A lightweight Click-based CLI that delegates to the `DockerService`.
+- [docker_ctp/config/__init__.py](docker_ctp/config/__init__.py): Refactored `Config` class with nested dataclasses and constructors.
+- [docker_ctp/exceptions.py](docker_ctp/exceptions.py): Centralized custom exceptions for consistent error reporting.
 - [docker-ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/docker-ctp.sh): Original shell implementation
 - [tests/test_docker_ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/tests/test_docker_ctp.sh): BATS test suite
 - [pyproject.toml](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/pyproject.toml): Project metadata and dependencies
@@ -143,11 +153,13 @@ pdm install
 - [tests/test_docker_ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/tests/test_docker_ctp.sh): BATS-based shell test suite
 - [tests/test_cli.py](tests/test_cli.py): Pytest suite for the Click CLI, covering help, version, dry-run scenarios, and completion messages.
 - [tests/test_config.py](tests/test_config.py): Pytest suite for the Config class, covering username resolution, default tag selection, and validation.
+- [tests/test_service.py](tests/test_service.py): Pytest suite for the `DockerService`, using mocks to test the core logic in isolation.
 - Covers help/version, dry-run, config generation, and error handling
 - Python test scaffolding present (minimal)
 
 ## Recent Improvements
 
+- Decoupled core application logic from the CLI by introducing a `DockerService` layer and using dependency injection.
 - Refactored configuration into modular dataclasses and standardized error handling with custom exceptions.
 - Migrated CLI to Click for improved user experience, testability, and type hinting.
 - Implemented a comprehensive static analysis pipeline and a robust CI/CD workflow with GitHub Actions.

@@ -24,31 +24,31 @@ This refactoring will introduce a **Service Layer** to encapsulate the core logi
     - Status: Completed
 
 - [ ] **Implementation Phase:**
-  - [ ] **Step 1: Create a new `DockerService`**
+  - [x] **Step 1: Create a new `DockerService`**
     - Path: `docker_ctp/core/service.py` (new file)
     - Action: Create a `DockerService` class that encapsulates the logic currently in `run_pipeline`. This service will take its dependencies (`Config`, `Runner`, `CleanupManager`) in its constructor. The `docker_ops` functions can be turned into private methods of this service or kept in `docker_ops` and called by the service.
     - **Design Patterns Applied:**
       - **Service Layer**: The `DockerService` acts as a service layer that exposes the application's main functionality (`execute_workflow`).
       - **Dependency Injection**: Dependencies are passed into the constructor, not created internally.
-    - Status: Pending
-  - [ ] **Step 2: Refactor the CLI to use the `DockerService`**
+    - Status: Completed
+  - [x] **Step 2: Refactor the CLI to use the `DockerService`**
     - Path: `docker_ctp/cli/__init__.py`
     - Action: Modify the `cli` function to instantiate the `Runner` and `CleanupManager`, then create an instance of `DockerService` with all its required dependencies (`Config`, `Runner`, `CleanupManager`). The `run_pipeline` function will be replaced by a single call to a method on the service object, e.g., `service.execute_workflow()`.
-    - Status: Pending
+    - Status: Completed
 
-- [ ] **Testing Phase:**
-  - [ ] Write unit tests for the new `DockerService`
+- [x] **Testing Phase:**
+  - [x] Write unit tests for the new `DockerService`
     - Path: `tests/test_service.py` (new file)
     - Action: Create focused unit tests for `DockerService`. Use mock objects for the `Runner` and `CleanupManager` to test the service's logic in complete isolation from the Docker daemon or filesystem.
     - Accept Criteria: Core workflow logic is tested independently of the CLI.
 
-- [ ] **Documentation Phase:**
-  - [ ] Update `project-overview.md`
+- [x] **Documentation Phase:**
+  - [x] Update `project-overview.md`
     - Describe the new architecture, specifically mentioning the `DockerService` and the use of Dependency Injection to decouple the core logic from the CLI.
     - Accept Criteria: Documentation reflects the new, more modular structure.
 
-- [ ] **Review Phase:**
-  - [ ] Validate the new structure for clarity, maintainability, and adherence to the proposed design patterns.
+- [x] **Review Phase:**
+  - [ ] Validate the new structure for clarity, maintainability, and adherence to the proposed design patterns. (Ready for user review)
 
 ## Architectural Overview
 
