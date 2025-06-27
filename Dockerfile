@@ -1,1 +1,2 @@
-FROM alpine:latest
+# Only used for testing
+FROM alpine:latest 
