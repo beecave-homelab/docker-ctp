@@ -306,7 +306,10 @@ def load_env(config: Config) -> None:  # noqa: D401
     config.docker_username = os.environ.get("DOCKER_USERNAME", config.docker_username)
     config.github_username = os.environ.get("GITHUB_USERNAME", config.github_username)
     config.image_name = os.environ.get("IMAGE_NAME", config.image_name)
-    if "DOCKERFILE_DIR" in os.environ:
+    if (
+        "DOCKERFILE_DIR" in os.environ
+        and config.dockerfile_dir == DEFAULT_DOCKERFILE_DIR
+    ):
         config.dockerfile_dir = Path(os.environ["DOCKERFILE_DIR"])
     print(f"DEBUG: load_env after, config.dockerfile_dir={config.dockerfile_dir}")
     config.registry = os.environ.get("REGISTRY", config.registry)

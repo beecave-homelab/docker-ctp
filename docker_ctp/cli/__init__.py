@@ -29,8 +29,8 @@ from ..config import (
     load_env,
     validate_config,
 )
-from ..core.docker_ops import build, login, push, tag_image
 from ..core.runner import Runner
+from ..core.service import DockerService
 from ..utils.build_context import validate_build_context
 from ..utils.cleanup import CleanupManager
 from ..utils.config_generation import generate_config_files
@@ -94,42 +94,6 @@ def create_config_from_ctx(ctx: click.Context) -> Config:  # noqa: D401
         no_cleanup=p.get("no_cleanup"),
     )
     return Config.from_cli(args_ns)
-
-
-def run_pipeline(config: Config) -> None:  # noqa: D401
-    """Execute the build • tag • push pipeline.
-
-    Args:
-        config: Validated runtime configuration.
-
-    Raises:
-        ValueError: If user input fails validation.
-        RuntimeError: If any Docker sub-command exits with a non-zero status.
-    """
-    validate_username(config.username)
-    validate_image_name(config.image_name)
-    if config.tag:
-        validate_tag(config.tag)
-    validate_dockerfile_dir(config.dockerfile_dir)
-    validate_build_context(config.dockerfile_dir)
-
-    runner = Runner(dry_run=config.dry_run)
-    cleanup_mgr = CleanupManager(config.dry_run)
-    try:
-        login(config, runner)
-        build(config, runner)
-        image = tag_image(config, runner)
-        cleanup_mgr.register(f"{config.image_name}:{config.tag}")
-        push(config, image, runner)
-        logging.info("Completed")
-    finally:
-        if config.cleanup_on_exit:
-            cleanup_mgr.cleanup()
-
-    # Surface a user-friendly completion message so that CLI consumers
-    # (and the test-suite) have a deterministic signal that the workflow
-    # finished successfully.
-    click.echo("Completed")
 
 
 def build_cli() -> click.Command:  # noqa: D401
@@ -219,9 +183,13 @@ def build_cli() -> click.Command:  # noqa: D401
         config = create_config_from_ctx(ctx)
         load_env(config)
         config.resolve()
-        validate_config(config)
 
-        run_pipeline(config)
+        runner = Runner(dry_run=config.dry_run)
+        cleanup_manager = CleanupManager(dry_run=config.dry_run)
+        service = DockerService(
+            config=config, runner=runner, cleanup_manager=cleanup_manager
+        )
+        service.execute_workflow()
 
     return cli
 
