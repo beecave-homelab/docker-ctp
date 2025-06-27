@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from getpass import getpass
+from ..exceptions import AuthError
 
 TOKEN_ENVS = {
     "docker": ["DOCKER_TOKEN", "DOCKER_PASSWORD"],
@@ -19,4 +20,4 @@ def get_token(registry: str) -> str:
             return token
     if os.isatty(0):  # pragma: no cover - interactive
         return getpass(f"Enter {registry} token: ")
-    raise RuntimeError(f"Environment variable {TOKEN_ENVS[registry][0]} not set")
+    raise AuthError(f"Environment variable {TOKEN_ENVS[registry][0]} not set")
