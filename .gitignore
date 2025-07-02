@@ -193,3 +193,4 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .cursor/rules/*.mdc
+images/carbon-now-env-example.png
