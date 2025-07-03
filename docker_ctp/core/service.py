@@ -15,6 +15,7 @@ from docker_ctp.utils.input_validation import (
     validate_tag,
     validate_username,
 )
+from ..exceptions import ConfigError
 
 if TYPE_CHECKING:
     from docker_ctp.config import Config
@@ -43,6 +44,7 @@ class DockerService:
             config: The application's runtime configuration.
             runner: The command runner for executing Docker commands.
             cleanup_manager: The manager for cleaning up Docker images.
+
         """
         self.config = config
         self.runner = runner
@@ -50,11 +52,22 @@ class DockerService:
 
     def _validate_inputs(self) -> None:
         """Run validation checks on user-provided inputs."""
+        logging.info("Validating configuration...")
+        # Registry
+        if self.config.registry not in {"docker", "github"}:
+            raise ConfigError("Registry must be 'docker' or 'github'")
+
+        # Credentials and Image Info
         validate_username(self.config.username)
         validate_image_name(self.config.image_name)
         if self.config.tag:
             validate_tag(self.config.tag)
+
+        # Dockerfile and Build Context
         validate_dockerfile_dir(self.config.dockerfile_dir)
+        dockerfile_path = self.config.dockerfile_dir / "Dockerfile"
+        if not dockerfile_path.is_file():
+            raise ConfigError(f"Dockerfile not found at {dockerfile_path}")
         validate_build_context(self.config.dockerfile_dir)
 
     def execute_workflow(self) -> None:
