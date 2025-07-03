@@ -95,7 +95,7 @@ class Config:
             registry=args.registry, username=args.username or ""
         )
         image = ImageInfo(
-            image_name=args.image_name or DEFAULT_IMAGE_NAME,
+            image_name=args.image_name or Path(args.dockerfile_dir).resolve().name,
             tag=args.tag,
             dockerfile_dir=Path(args.dockerfile_dir),
         )
@@ -104,11 +104,9 @@ class Config:
         )
         runtime = RuntimeFlags(
             dry_run=args.dry_run,
-            log_level="verbose"
-            if args.verbose
-            else "quiet"
-            if args.quiet
-            else "normal",
+            log_level=(
+                "verbose" if args.verbose else "quiet" if args.quiet else "normal"
+            ),
             cleanup_on_exit=not args.no_cleanup,
         )
         return cls(creds=creds, image=image, build=build, runtime=runtime)

@@ -25,3 +25,17 @@ class DependencyError(DockerCTPError):
 
 class DockerOperationError(DockerCTPError):
     """Raised for errors during Docker operations (login, build, etc.)."""
+
+
+class CLIError(DockerCTPError):
+    """Raised for command-line interface related errors."""
+
+    def __init__(self, message, ctx=None, help_message=None):
+        super().__init__(message)
+        self.ctx = ctx
+        self.help_message = help_message or ""
+
+    def format_message(self):
+        if self.help_message:
+            return f"{self.message}\n\n{self.help_message}"
+        return self.message
