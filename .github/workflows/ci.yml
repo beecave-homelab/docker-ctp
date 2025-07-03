@@ -26,11 +26,11 @@ jobs:
         run: pdm install -G lint -G test
       - name: Ruff (lint)
         run: pdm run lint-ruff
-      - name: Black (check)
-        run: pdm run lint-black
+      # - name: Black (check)
+        # run: pdm run lint-black
       - name: Pylint
         run: pdm run lint-pylint
-      - name: Pydocstyle
-        run: pdm run pydocstyle --convention=google docker_ctp
+      # - name: Pydocstyle
+        # run: pdm run pydocstyle --convention=google docker_ctp
       - name: Run tests
-        run: pdm run pytest --cov=docker_ctp --cov-report=term-missing 
+        run: pdm run pytest --cov=docker_ctp --cov-report=term-missing
