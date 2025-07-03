@@ -74,4 +74,4 @@ def test_execute_workflow(
 
     # Cleanup manager calls
     mock_cleanup_manager.register.assert_called_once_with("test-image:latest")
-    mock_cleanup_manager.cleanup.assert_called_once() 
+    mock_cleanup_manager.cleanup.assert_called_once()

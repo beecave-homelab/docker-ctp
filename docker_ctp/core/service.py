@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 
 import click
 
-from ..core import docker_ops
-from ..utils.build_context import validate_build_context
-from ..utils.input_validation import (
+from docker_ctp.core import docker_ops
+from docker_ctp.utils.build_context import validate_build_context
+from docker_ctp.utils.input_validation import (
     validate_dockerfile_dir,
     validate_image_name,
     validate_tag,
@@ -17,9 +17,9 @@ from ..utils.input_validation import (
 )
 
 if TYPE_CHECKING:
-    from ..config import Config
-    from ..core.runner import Runner
-    from ..utils.cleanup import CleanupManager
+    from docker_ctp.config import Config
+    from docker_ctp.core.runner import Runner
+    from docker_ctp.utils.cleanup import CleanupManager
 
 
 class DockerService:
@@ -72,4 +72,4 @@ class DockerService:
             if self.config.cleanup_on_exit:
                 self.cleanup_manager.cleanup()
 
-        click.echo("Completed") 
+        click.echo("Completed")

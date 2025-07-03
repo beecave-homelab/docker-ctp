@@ -16,8 +16,8 @@ Public attributes exported via :pydata:`__all__`:
 
 from __future__ import annotations
 import logging
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 
 import click
 
@@ -27,20 +27,12 @@ from ..config import (
     DEFAULT_REGISTRY,
     Config,
     load_env,
-    validate_config,
 )
 from ..core.runner import Runner
 from ..core.service import DockerService
-from ..utils.build_context import validate_build_context
 from ..utils.cleanup import CleanupManager
 from ..utils.config_generation import generate_config_files
 from ..utils.dependency_checker import check_dependencies
-from ..utils.input_validation import (
-    validate_dockerfile_dir,
-    validate_image_name,
-    validate_tag,
-    validate_username,
-)
 from ..utils.logging_utils import print_ascii_art
 
 
@@ -67,33 +59,6 @@ def configure_logging(verbose: bool, quiet: bool) -> None:  # noqa: D401
 # ---------------------------------------------------------------------------
 # Helper functions for the new Click-powered CLI
 # ---------------------------------------------------------------------------
-
-
-def create_config_from_ctx(ctx: click.Context) -> Config:  # noqa: D401
-    """Convert Click context parameters into a :class:`docker_ctp.config.Config`.
-
-    Args:
-        ctx: The active Click context containing parsed command-line values.
-
-    Returns:
-        A fully populated :class:`docker_ctp.config.Config` instance ready for
-        environment overrides and validation.
-    """
-    p = ctx.params  # shorthand
-    args_ns = SimpleNamespace(
-        registry=p["registry"],
-        username=p.get("username"),
-        image_name=p.get("image_name"),
-        tag=p.get("tag"),
-        dockerfile_dir=str(p.get("dockerfile_dir")),
-        no_cache=p.get("no_cache"),
-        force_rebuild=p.get("force_rebuild"),
-        dry_run=p.get("dry_run"),
-        verbose=p.get("verbose"),
-        quiet=p.get("quiet"),
-        no_cleanup=p.get("no_cleanup"),
-    )
-    return Config.from_cli(args_ns)
 
 
 def build_cli() -> click.Command:  # noqa: D401
@@ -136,51 +101,23 @@ def build_cli() -> click.Command:  # noqa: D401
         help="Generate default configuration files and exit",
     )
     @click.version_option(__version__, "--version", prog_name="docker-ctp")
-    @click.pass_context
-    def cli(
-        ctx: click.Context,
-        username: str | None,
-        image_name: str | None,
-        tag: str | None,
-        dockerfile_dir: Path,
-        registry: str,
-        no_cache: bool,
-        force_rebuild: bool,
-        dry_run: bool,
-        verbose: bool,
-        quiet: bool,
-        no_cleanup: bool,
-        generate_config: bool,
-    ) -> None:  # noqa: D401
+    def main_command(  # noqa: D401
+        **kwargs,
+    ) -> None:
         """Entry-point for *docker-ctp* when invoked via the CLI."""
-        print(f"DEBUG: cli received dockerfile_dir={dockerfile_dir}")
-        configure_logging(verbose, quiet)
-        print_ascii_art(dry_run)
+        configure_logging(kwargs["verbose"], kwargs["quiet"])
+        print_ascii_art(kwargs["dry_run"])
 
-        if generate_config:
+        if kwargs["generate_config"]:
             generate_config_files()
             return
 
-        check_dependencies(dry_run)
+        check_dependencies(kwargs["dry_run"])
 
-        # Store parameters on the context so sub-commands (if added later) can access.
-        ctx.params.update(
-            {
-                "username": username,
-                "image_name": image_name,
-                "tag": tag,
-                "dockerfile_dir": dockerfile_dir,
-                "registry": registry,
-                "no_cache": no_cache,
-                "force_rebuild": force_rebuild,
-                "dry_run": dry_run,
-                "verbose": verbose,
-                "quiet": quiet,
-                "no_cleanup": no_cleanup,
-            }
-        )
+        # Create a Config instance from the parsed CLI arguments.
+        args = SimpleNamespace(**kwargs)
+        config = Config.from_cli(args)
 
-        config = create_config_from_ctx(ctx)
         load_env(config)
         config.resolve()
 
@@ -191,7 +128,7 @@ def build_cli() -> click.Command:  # noqa: D401
         )
         service.execute_workflow()
 
-    return cli
+    return main_command
 
 
 # Build the command on import so external callers can re-use it.
