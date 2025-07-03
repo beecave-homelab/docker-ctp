@@ -1,6 +1,6 @@
 [project]
 name = "docker-ctp"
-version = "0.2.0"
+version = "0.3.0"
 description = "It builds, tags and pushes Docker images to Docker Hub or the GitHubContainer Registry."
 authors = [
     {name = "elvee", email = "lowie@beecave.nl"},
