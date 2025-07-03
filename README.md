@@ -4,7 +4,7 @@ A Python-based tool for building, tagging, and pushing Docker images to Docker H
 
 ## Versions
 
-**Current version**: 0.1.0 – Initial Python implementation with CLI mirroring the original shell script, modular utilities, and support for both Docker Hub and GitHub Container Registry.
+**Current version**: 0.3.0 – Initial Python implementation with CLI mirroring the original shell script, modular utilities, and support for both Docker Hub and GitHub Container Registry.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ A Python-based tool for building, tagging, and pushing Docker images to Docker H
 ## Badges
 
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/docker-supported-blue)
 

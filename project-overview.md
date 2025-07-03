@@ -1,7 +1,7 @@
 ---
 repo: https://github.com/beecave-homelab/docker-ctp.git
-commit: 2012677c53542d85c019fd307636c100531d6ec0
-generated: 2025-07-03T00:00:00Z
+commit: f948c2fbf978b7d88e4e6fdb32e6746684526b03
+generated: 2025-07-03T13:19:33Z
 ---
 <!-- SECTIONS:API,CLI,WEBUI,CI,DOCKER,TESTS -->
 
@@ -9,8 +9,8 @@ generated: 2025-07-03T00:00:00Z
 
 A Python-based tool and shell script for building, tagging, and pushing Docker images to Docker Hub or GitHub Container Registry. Designed for developers and CI/CD workflows needing reproducible container builds.
 
-[![Language](https://img.shields.io/badge/Python-3.13.5-blue)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/Version-0.2.0-brightgreen)](#version-summary)
+[![Language](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/Version-0.3.0-brightgreen)](#version-summary)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-supported-blue)](Dockerfile)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
@@ -45,9 +45,11 @@ pdm install
 
 ## Version Summary
 
-| Version | Date | Type | Key Changes |
-|---|---|---|----|
-| 0.2.0 | 2024-06-09 | ✨ | Python package, CLI, modular utilities, Docker/Hub support |
+| Version | Date       | Type  | Key Changes                                                                                              |
+|:--------|:-----------|:------|:---------------------------------------------------------------------------------------------------------|
+| 0.3.0   | 2025-07-03 | Minor | Major refactor to a service-based architecture, with new features and tests.                             |
+| 0.2.0   | 2024-06-09 | ✨    | Python package, CLI, modular utilities, Docker/Hub support                                               |
+| 0.1.0   | 2025-06-27 | 🎉    | Initial release, porting core features from shell script to a Python package.                            |
 
 ## Project Features
 
@@ -71,32 +73,26 @@ pdm install
 <details><summary>Show tree</summary>
 
 ```text
-.
+.├── .github/workflows/    # CI/CD workflows
+│   └── ci.yml
 ├── docker_ctp/           # Main Python package
-│   ├── cli/              # Click-based CLI entrypoint and main workflow
-│   ├── core/             # Docker logic (build, tag, push)
-│   │   ├── docker_ops.py
-│   │   └── service.py    # Service layer for core application logic
-│   ├── config/           # Refactored Config dataclasses and env loading
-│   ├── exceptions.py     # Custom exception classes for standardized error handling
-│   ├── utils/            # Utilities: logging, rebuild, validation, etc.
-│   ├── main.py           # Entrypoint
-│   └── __main__.py       # Entrypoint
-├── docker-ctp.sh         # Original shell script
-├── install.sh            # Shell script installer
-├── src/docker_ctp/       # Packaging stub
-├── tests/                # Test scripts (BATS and Pytest)
-│   ├── __init__.py       # Python test package initializer
-│   ├── test_cli.py       # Pytest suite for CLI
-│   ├── test_config.py    # Pytest suite for Config
-│   ├── test_service.py   # Pytest suite for the DockerService
-│   ├── test_docker_ctp.sh  # BATS suite for shell script
-│   └── test_smart_rebuild.sh # BATS suite for smart rebuild
-├── to-do/                # Refactoring and improvement plans
-├── Dockerfile            # Minimal Dockerfile
-├── pyproject.toml        # Project metadata
-├── README.md             # User documentation
-└── project-overview.md   # (This file)
+│   ├── cli/              # Click-based CLI entrypoint
+│   ├── core/             # Core logic: service layer, Docker ops
+│   ├── config/           # Configuration dataclasses
+│   ├── exceptions.py     # Custom exception classes
+│   └── utils/            # Helper modules
+├── tests/                # Pytest suites
+│   ├── test_cli.py
+│   ├── test_config.py
+│   ├── test_service.py
+│   └── test_utils.py
+├── to-do/                # Task-specific refactoring plans
+├── .gitignore
+├── .pre-commit-config.yaml
+├── Dockerfile
+├── pdm.lock
+├── pyproject.toml
+└── README.md
 ```
 
 </details>
@@ -110,13 +106,13 @@ The architecture has been refactored to decouple the command-line interface from
 - **Thin CLI Layer**: The `docker_ctp/cli/__init__.py` module is now a lightweight interface responsible only for parsing user input, preparing dependencies, and invoking the `DockerService`.
 
 - [docker_ctp/core/service.py](docker_ctp/core/service.py): The new service layer that orchestrates the build-tag-push workflow.
-- [docker_ctp/core/docker_ops.py](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/docker_ctp/core/docker_ops.py): High-level Docker build, tag, push logic with error handling.
+- [docker_ctp/core/docker_ops.py](https://github.com/beecave-homelab/docker-ctp/blob/f948c2fbf978b7d88e4e6fdb32e6746684526b03/docker_ctp/core/docker_ops.py): High-level Docker build, tag, push logic with error handling.
 - [docker_ctp/cli/**init**.py](docker_ctp/cli/__init__.py): A lightweight Click-based CLI that delegates to the `DockerService`.
 - [docker_ctp/config/**init**.py](docker_ctp/config/__init__.py): Refactored `Config` class with nested dataclasses and constructors.
 - [docker_ctp/exceptions.py](docker_ctp/exceptions.py): Centralized custom exceptions for consistent error reporting.
-- [docker-ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/docker-ctp.sh): Original shell implementation
-- [tests/test_docker_ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/tests/test_docker_ctp.sh): BATS test suite
-- [pyproject.toml](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/pyproject.toml): Project metadata and dependencies
+- [docker-ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/f948c2fbf978b7d88e4e6fdb32e6746684526b03/docker-ctp.sh): Original shell implementation
+- [tests/test_docker_ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/f948c2fbf978b7d88e4e6fdb32e6746684526b03/tests/test_docker_ctp.sh): BATS test suite
+- [pyproject.toml](https://github.com/beecave-homelab/docker-ctp/blob/f948c2fbf978b7d88e4e6fdb32e6746684526b03/pyproject.toml): Project metadata and dependencies
 
 ## API
 >
@@ -149,12 +145,12 @@ The architecture has been refactored to decouple the command-line interface from
 
 ## Docker
 
-- [Dockerfile](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/Dockerfile) present (minimal, based on alpine)
+- [Dockerfile](https://github.com/beecave-homelab/docker-ctp/blob/f948c2fbf978b7d88e4e6fdb32e6746684526b03/Dockerfile) present (minimal, based on alpine)
 - Supports building and pushing images to Docker Hub and GitHub Container Registry
 
 ## Tests
 
-- [tests/test_docker_ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/tests/test_docker_ctp.sh): BATS-based shell test suite
+- The BATS test suite for the legacy shell script is no longer maintained.
 - [tests/test_cli.py](tests/test_cli.py): Pytest suite for the Click CLI, covering help, version, dry-run scenarios, and completion messages.
 - [tests/test_config.py](tests/test_config.py): Pytest suite for the Config class, covering username resolution, default tag selection, and validation.
 - [tests/test_service.py](tests/test_service.py): Pytest suite for the `DockerService`, using mocks to test the core logic in isolation.
@@ -163,13 +159,11 @@ The architecture has been refactored to decouple the command-line interface from
 
 ## Recent Improvements
 
-- Decoupled core application logic from the CLI by introducing a `DockerService` layer and using dependency injection.
-- Refactored configuration into modular dataclasses and standardized error handling with custom exceptions.
-- Migrated CLI to Click for improved user experience, testability, and type hinting.
-- Added build-context validator replicating shell logic.
-- Added spinner-based progress indicator around build/push.
-- Refined `.env` loading precedence to honour CLI overrides; added search-path tests.
-- Implemented full pytest suite (24 tests) achieving 100 % pass rate.
-- Implemented comprehensive static analysis pipeline and robust CI/CD workflow with GitHub Actions.
+- ✨ **Architectural Redesign**: Decoupled the CLI from core logic by introducing a `DockerService` layer, using dependency injection for better testability and maintenance.
+- ✨ **CI/CD Pipeline**: Implemented a full CI workflow with GitHub Actions to automate testing and linting.
+- ✨ **Enhanced Tooling**: Migrated to Click for the CLI, added a progress spinner (`halo`), and implemented pre-commit hooks for code quality.
+- 🔧 **Refactoring**: Overhauled configuration management with dataclasses, standardized exceptions, and improved the `.env` loading mechanism.
+- 🐛 **Bug Fixes**: Addressed issues with CLI argument parsing and error handling.
+- 🧪 **Testing**: Added a comprehensive `pytest` suite covering the service layer, CLI, configuration, and utilities.
 
 **Always update this file when code or configuration changes.**
