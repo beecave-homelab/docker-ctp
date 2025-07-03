@@ -46,6 +46,7 @@ def configure_logging(verbose: bool, quiet: bool) -> None:  # noqa: D401
     Notes:
         The flags are mutually exclusive; *quiet* wins over *verbose* when
         both are provided (mirroring many CLI conventions).
+
     """
     if quiet:
         level = logging.ERROR
@@ -109,7 +110,7 @@ def build_cli() -> click.Command:  # noqa: D401
         print_ascii_art(kwargs["dry_run"])
 
         if kwargs["generate_config"]:
-            generate_config_files()
+            generate_config_files(kwargs["dry_run"])
             return
 
         check_dependencies(kwargs["dry_run"])
