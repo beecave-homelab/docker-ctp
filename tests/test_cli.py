@@ -20,7 +20,7 @@ def _set_env_token(monkeypatch):
 
 
 @pytest.fixture()
-def minimal_dockerfile(tmp_path: Path) -> Path:
+def _minimal_dockerfile(tmp_path: Path) -> Path:
     """Return a directory containing a minimal Dockerfile."""
     dockerfile = tmp_path / "Dockerfile"
     dockerfile.write_text("FROM scratch\n")
@@ -28,6 +28,7 @@ def minimal_dockerfile(tmp_path: Path) -> Path:
 
 
 def test_cli_help():
+    """Test the --help flag."""
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
@@ -35,13 +36,15 @@ def test_cli_help():
 
 
 def test_cli_version():
+    """Test the --version flag."""
     runner = CliRunner()
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
     assert "docker-ctp" in result.output
 
 
-def test_cli_dry_run_success(minimal_dockerfile: Path):
+def test_cli_dry_run_success(_minimal_dockerfile: Path):
+    """Test a successful dry-run scenario."""
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -54,7 +57,7 @@ def test_cli_dry_run_success(minimal_dockerfile: Path):
             "--image-tag",
             "1.0.0",
             "--dockerfile-dir",
-            str(minimal_dockerfile),
+            str(_minimal_dockerfile),
         ],
     )
     assert result.exit_code == 0
@@ -62,7 +65,8 @@ def test_cli_dry_run_success(minimal_dockerfile: Path):
     assert "Completed" in result.output
 
 
-def test_cli_invalid_username(minimal_dockerfile: Path):
+def test_cli_invalid_username(_minimal_dockerfile: Path):
+    """Test CLI failure with an invalid username."""
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -75,7 +79,7 @@ def test_cli_invalid_username(minimal_dockerfile: Path):
             "--image-tag",
             "1.0.0",
             "--dockerfile-dir",
-            str(minimal_dockerfile),
+            str(_minimal_dockerfile),
         ],
     )
     assert result.exit_code == 1
@@ -84,6 +88,7 @@ def test_cli_invalid_username(minimal_dockerfile: Path):
 
 
 def test_cli_missing_dockerfile(tmp_path: Path):
+    """Test CLI failure when the Dockerfile is missing."""
     print(f"DEBUG: test_cli_missing_dockerfile tmp_path={tmp_path}")
     runner = CliRunner()
     result = runner.invoke(
