@@ -120,11 +120,38 @@ The architecture has been refactored to decouple the command-line interface from
 
 ## CLI
 
-- Python CLI: `python -m docker_ctp.cli [OPTIONS]`
-- **Click-based CLI** mirrors all major shell script options (username, image name, tag, registry, dry-run, verbose, etc.)
-- Provides comprehensive input validation and standardized error handling using custom exceptions.
-- Generates config files with `--generate-config`
-- See [docker_ctp/cli/**init**.py](docker_ctp/cli/__init__.py)
+The command-line interface is built with Click and provides the following options:
+
+| Flag | Alias | Description |
+| :--- | :--- | :--- |
+| `--banner` | | Show the ASCII art banner and exit. |
+| `--username` | `-u` | Registry username. |
+| `--image-name` | `-i` | Docker image name. See note below for precedence. |
+| `--image-tag` | `-t` | Docker image tag. |
+| `--dockerfile-dir` | `-d` | Path to Dockerfile directory. Also used for image name if `-i` is not set. |
+| `--registry` | `-g` | Target registry (`docker` or `github`). |
+| `--no-cache` | | Disable Docker's build cache. |
+| `--force-rebuild` | | Force a rebuild even if a matching image already exists. |
+| `--dry-run` | | Simulate all commands without executing them. |
+| `--verbose` | | Enable verbose (DEBUG level) output. |
+| `--quiet` | | Suppress all informational output (errors only). |
+| `--no-cleanup` | | Disable automatic cleanup of intermediate images. |
+| `--generate-config` | | Generate default `.env` and `.dockerignore` files and exit. |
+| `--version` | | Show the application version and exit. |
+| `--help` | | Show this help message and exit. |
+
+**Image Name Precedence:**
+
+The Docker image name is determined using the following priority order:
+
+1. The `--image-name` (`-i`) command-line flag.
+2. The `IMAGE_NAME` variable in an `.env` file.
+3. The name of the directory specified by `--dockerfile-dir` (`-d`).
+4. The name of the current working directory (as a final fallback).
+
+
+
+See [docker_ctp/cli/__init__.py](docker_ctp/cli/__init__.py) for the full implementation.
 
 ## WebUI
 >
