@@ -193,6 +193,11 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .cursor/rules/*.mdc
+
+# Windsurf
+.windsurf/
+.windsurf/rules/*.md
+
 images/carbon-now-env-example.png
 
 pdm.lock
