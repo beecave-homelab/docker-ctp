@@ -1,6 +1,4 @@
-"""
-Custom exception classes for the docker-ctp package.
-"""
+"""Custom exception classes for the docker-ctp package."""
 
 import click
 
