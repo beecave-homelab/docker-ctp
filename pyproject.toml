@@ -26,6 +26,9 @@ lint-ruff = "ruff check ."
 lint-black = "black . --check"
 lint-pylint = "pylint docker_ctp"
 
+[project.scripts]
+docker-ctp = "docker_ctp.cli:main"
+
 [tool.pdm.dev-dependencies]
 # Linting and code-quality tools
 lint = [
