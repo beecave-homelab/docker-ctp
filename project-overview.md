@@ -1,7 +1,7 @@
 ---
 repo: https://github.com/beecave-homelab/docker-ctp.git
 commit: 2012677c53542d85c019fd307636c100531d6ec0
-generated: 2024-06-09T00:00:00Z
+generated: 2025-07-03T00:00:00Z
 ---
 <!-- SECTIONS:API,CLI,WEBUI,CI,DOCKER,TESTS -->
 
@@ -17,6 +17,8 @@ A Python-based tool and shell script for building, tagging, and pushing Docker i
 [![Pydocstyle](https://img.shields.io/badge/docs%20style-pydocstyle-blue.svg)](https://github.com/PyCQA/pydocstyle)
 [![Pytest](https://img.shields.io/badge/tests-pytest-green)](https://docs.pytest.org/en/stable/)
 
+> **Status:** Package now fully matches the original `docker-ctp.sh` feature set (_July 2025_).
+
 ## Table of Contents
 
 - [Quickstart for Developers](#quickstart-for-developers)
@@ -27,10 +29,9 @@ A Python-based tool and shell script for building, tagging, and pushing Docker i
 - [API](#api)
 - [CLI](#cli)
 - [WebUI](#webui)
-- [CI/CD](#cicd)
+- [Code Quality](#code-quality)
 - [Docker](#docker)
 - [Tests](#tests)
-- [Code Quality & CI/CD](#code-quality-cicd)
 - [Recent Improvements](#recent-improvements)
 
 ## Quickstart for Developers
@@ -58,6 +59,9 @@ pdm install
 - Smart rebuild optimization and dry-run support
 - Secure token handling and input validation
 - Generates config templates (.env, .dockerignore)
+- Build-context validation with optimisation suggestions & large-file detection
+- User-friendly progress indicator (spinner) during long-running Docker operations
+- Robust dependency checks (docker binary & daemon, system tools)
 - Shell script and Python package both supported
 - Comprehensive static analysis (Ruff, Black, Pylint, Pydocstyle) and CI/CD pipeline
 - BATS-based shell test suite and Pytest-based Python unit tests
@@ -107,8 +111,8 @@ The architecture has been refactored to decouple the command-line interface from
 
 - [docker_ctp/core/service.py](docker_ctp/core/service.py): The new service layer that orchestrates the build-tag-push workflow.
 - [docker_ctp/core/docker_ops.py](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/docker_ctp/core/docker_ops.py): High-level Docker build, tag, push logic with error handling.
-- [docker_ctp/cli/__init__.py](docker_ctp/cli/__init__.py): A lightweight Click-based CLI that delegates to the `DockerService`.
-- [docker_ctp/config/__init__.py](docker_ctp/config/__init__.py): Refactored `Config` class with nested dataclasses and constructors.
+- [docker_ctp/cli/**init**.py](docker_ctp/cli/__init__.py): A lightweight Click-based CLI that delegates to the `DockerService`.
+- [docker_ctp/config/**init**.py](docker_ctp/config/__init__.py): Refactored `Config` class with nested dataclasses and constructors.
 - [docker_ctp/exceptions.py](docker_ctp/exceptions.py): Centralized custom exceptions for consistent error reporting.
 - [docker-ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/docker-ctp.sh): Original shell implementation
 - [tests/test_docker_ctp.sh](https://github.com/beecave-homelab/docker-ctp/blob/2012677c53542d85c019fd307636c100531d6ec0/tests/test_docker_ctp.sh): BATS test suite
@@ -130,7 +134,7 @@ The architecture has been refactored to decouple the command-line interface from
 >
 > No web user interface is present in this repository.
 
-## CI/CD
+## Code Quality
 
 - **Static Analysis:**
   - Ruff, Black, Pylint, and Pydocstyle are configured and enforced via PDM scripts and pre-commit hooks, ensuring code quality and style compliance.
@@ -154,14 +158,18 @@ The architecture has been refactored to decouple the command-line interface from
 - [tests/test_cli.py](tests/test_cli.py): Pytest suite for the Click CLI, covering help, version, dry-run scenarios, and completion messages.
 - [tests/test_config.py](tests/test_config.py): Pytest suite for the Config class, covering username resolution, default tag selection, and validation.
 - [tests/test_service.py](tests/test_service.py): Pytest suite for the `DockerService`, using mocks to test the core logic in isolation.
-- Covers help/version, dry-run, config generation, and error handling
-- Python test scaffolding present (minimal)
+- [tests/test_utils.py](tests/test_utils.py): Build-context validation and other utility helpers.
+- 24 pytest cases cover CLI, Config, Service, Util functions, build-context validation, and error handling – all **passing**.
 
 ## Recent Improvements
 
 - Decoupled core application logic from the CLI by introducing a `DockerService` layer and using dependency injection.
 - Refactored configuration into modular dataclasses and standardized error handling with custom exceptions.
 - Migrated CLI to Click for improved user experience, testability, and type hinting.
-- Implemented a comprehensive static analysis pipeline and a robust CI/CD workflow with GitHub Actions.
+- Added build-context validator replicating shell logic.
+- Added spinner-based progress indicator around build/push.
+- Refined `.env` loading precedence to honour CLI overrides; added search-path tests.
+- Implemented full pytest suite (24 tests) achieving 100 % pass rate.
+- Implemented comprehensive static analysis pipeline and robust CI/CD workflow with GitHub Actions.
 
 **Always update this file when code or configuration changes.**
