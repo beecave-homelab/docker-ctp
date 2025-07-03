@@ -194,3 +194,5 @@ cython_debug/
 .cursorindexingignore
 .cursor/rules/*.mdc
 images/carbon-now-env-example.png
+
+pdm.lock
