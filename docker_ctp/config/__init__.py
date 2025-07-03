@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields as dataclass_fields, MISSING
 from pathlib import Path
 from types import SimpleNamespace
-from ..exceptions import ConfigError
 
 DEFAULT_DOCKER_USERNAME = os.environ.get("USER", "")
 DEFAULT_GITHUB_USERNAME = os.environ.get("USER", "")
@@ -285,48 +284,67 @@ ENV_LOCATIONS = [
 ]
 
 
+def _get_field_default(dc_instance: object, field_name: str):
+    """Return the default value for *field_name* on a dataclass *instance*."""
+    for f in dataclass_fields(dc_instance):
+        if f.name == field_name:
+            if f.default is not MISSING:
+                return f.default
+            if f.default_factory is not MISSING:  # type: ignore[attr-defined]
+                return f.default_factory()  # type: ignore[misc]
+    return None
+
+
 def load_env(config: Config) -> None:  # noqa: D401
     """Populate *os.environ* from known files and merge into *config*."""
-    print(f"DEBUG: load_env before, config.dockerfile_dir={config.dockerfile_dir}")
-    print(
-        f"DEBUG: load_env os.environ.get('DOCKERFILE_DIR')={os.environ.get('DOCKERFILE_DIR')}"
-    )
-    for location in ENV_LOCATIONS:
-        if location.is_file():
-            logging.info("Loading configuration from %s", location)
-            with location.open("r", encoding="utf-8") as handle:
-                for line in handle:
-                    if line.startswith("#") or "=" not in line:
+    search_paths: list[Path] = []
+    # 1. Conditionally add ./.env
+    if Path.cwd().name == "docker-ctp":
+        search_paths.append(Path.cwd() / ".env")
+    # 2. Conditionally add ~/.config/docker-ctp/.env
+    search_paths.append(Path.home() / ".config" / "docker-ctp" / ".env")
+    # 3. Conditionally add ~/.docker-ctp/.env
+    search_paths.append(Path.home() / ".docker-ctp" / ".env")
+    # 4. Conditionally add /etc/docker-ctp/.env
+    search_paths.append(Path("/etc/docker-ctp/.env"))
+
+    for env_path in search_paths:
+        if env_path.is_file():
+            logging.info("Loading configuration from %s", env_path)
+            with env_path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
                         continue
-                    key, value = line.strip().split("=", 1)
-                    os.environ.setdefault(key, value)
-            break
+                    key, value = line.split("=", 1)
+                    key = key.strip().lower()
+                    value = value.strip().strip("'\"")
 
-    # Fold env vars into the *config* instance (using shimmed properties).
-    config.docker_username = os.environ.get("DOCKER_USERNAME", config.docker_username)
-    config.github_username = os.environ.get("GITHUB_USERNAME", config.github_username)
-    config.image_name = os.environ.get("IMAGE_NAME", config.image_name)
-    if (
-        "DOCKERFILE_DIR" in os.environ
-        and config.dockerfile_dir == DEFAULT_DOCKERFILE_DIR
-    ):
-        config.dockerfile_dir = Path(os.environ["DOCKERFILE_DIR"])
-    print(f"DEBUG: load_env after, config.dockerfile_dir={config.dockerfile_dir}")
-    config.registry = os.environ.get("REGISTRY", config.registry)
-    if os.environ.get("NO_CLEANUP"):
-        config.cleanup_on_exit = False
+                    # Find the correct sub-config and update it
+                    for sub_config in (
+                        config.creds,
+                        config.image,
+                        config.build,
+                        config.runtime,
+                    ):
+                        if hasattr(sub_config, key):
+                            current = getattr(sub_config, key)
+                            default_val = _get_field_default(sub_config, key)
+                            # Skip overriding when the *current* value differs from the
+                            # dataclass default – this usually means the value came from
+                            # CLI args and should win over the .env.
+                            if current != default_val:
+                                continue
+                            # Handle type conversions
+                            if isinstance(current, bool):
+                                setattr(sub_config, key, value.lower() == "true")
+                            elif isinstance(current, Path):
+                                setattr(sub_config, key, Path(value))
+                            else:
+                                setattr(sub_config, key, value)
+                            break  # Move to next line in .env file
 
+            config.resolve()  # Re-resolve dynamic values after loading .env
+            return
 
-def validate_config(config: Config) -> None:  # noqa: D401
-    """Ensure *config* is internally consistent and points to real resources."""
-    print(f"DEBUG: validate_config checking {config.dockerfile_dir / 'Dockerfile'}")
-    if config.registry not in {"docker", "github"}:
-        raise ConfigError("Registry must be 'docker' or 'github'")
-    if not config.username:
-        raise ConfigError("Username is required")
-    if not config.image_name:
-        raise ConfigError("Image name is required")
-    dockerfile = config.dockerfile_dir / "Dockerfile"
-    if not dockerfile.is_file():
-        print(f"DEBUG: validate_config did not find Dockerfile at {dockerfile}")
-        raise ConfigError(f"Dockerfile not found at {dockerfile}")
+    logging.info("No .env file found in search paths. Using defaults/CLI args.")
