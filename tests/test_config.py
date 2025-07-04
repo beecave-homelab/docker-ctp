@@ -9,9 +9,9 @@ from unittest.mock import patch
 import pytest
 
 from docker_ctp.config import (
-    Config,
     DEFAULT_DOCKERHUB_TAG,
     DEFAULT_GITHUB_TAG,
+    Config,
     load_env,
 )
 

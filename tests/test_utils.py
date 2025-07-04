@@ -1,16 +1,16 @@
 """Tests for the utility functions in docker_ctp.utils."""
 
 import logging
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import subprocess
 
 import pytest
+
+from docker_ctp.exceptions import DependencyError
 from docker_ctp.utils.build_context import validate_build_context
 from docker_ctp.utils.config_generation import generate_config_files
 from docker_ctp.utils.dependency_checker import check_dependencies
-from docker_ctp.exceptions import DependencyError
-
 
 # --- Tests for build_context.py ---
 
