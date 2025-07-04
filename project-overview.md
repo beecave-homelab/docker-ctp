@@ -10,7 +10,7 @@ generated: 2025-07-03T22:42:08Z
 A Python-based tool and shell script for building, tagging, and pushing Docker images to Docker Hub or GitHub Container Registry. Designed for developers and CI/CD workflows needing reproducible container builds.
 
 [![Language](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/Version-0.4.0-brightgreen)](#version-summary)
+[![Version](https://img.shields.io/badge/Version-0.5.0-brightgreen)](#version-summary)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-supported-blue)](Dockerfile)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
@@ -47,6 +47,7 @@ pdm install
 
 | Version | Date       | Type  | Key Changes                                                                                              |
 |:--------|:-----------|:------|:---------------------------------------------------------------------------------------------------------|
+| 0.5.0   | 2025-07-04 | ✨    | Refactored and centralized messaging and logging.                                                        |
 | 0.4.0   | 2025-07-04 | ✨    | Enhances project stability and maintainability through refactoring, dependency updates, and CI adjustments. |
 | 0.3.1   | 2025-07-04 | 🐛    | Fixed CLI output overlap by migrating from `halo` to `rich` for spinners and logging.                    |
 | 0.3.0   | 2025-07-03 | Minor | Major refactor to a service-based architecture, with new features and tests.                             |

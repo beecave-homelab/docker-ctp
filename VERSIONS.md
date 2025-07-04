@@ -1,18 +1,33 @@
 # Release History
 
-## **v0.4.0** (Current) - *04-07-2025*
+## **v0.5.0** (Current) - *04-07-2025*
 
-✨ **Version Bump**
+✨ **Refactor: Messaging and Logging**
 
-### ✨ **New Features in 0.4.0**
+### 🔧 **Improvements in 0.5.0**
 
-- **Added**: Placeholder for new features.
+- **Refactored**: Centralized all user-facing messaging and logging through a new `console` module to ensure consistency and simplify maintenance.
+- **Enhanced**: Replaced direct `print` calls and basic logging with `rich.console.Console` for improved, formatted output across the application.
+
+#### 📝 **Commits in 0.5.0**: `bff8fbd`, `2c51f57`, `7d099eb`, `5963683`, `7c0636e`
+
+---
+
+## **v0.4.0** - *04-07-2025*
+
+✨ **Refactor & Dependency Updates**
 
 ### 🔧 **Improvements in 0.4.0**
 
-- **Updated**: Version number across various project files.
+- **Refactored**: Enhanced core utility functions to improve modularity and maintainability.
+- **Updated**: Project dependencies to their latest versions for better stability.
 
-#### 📝 **Commits in 0.4.0**: `7fcc295`, `90349c3`, `df872a1`, `1386987`, `48c2681`
+### 📝 **Documentation in 0.4.0**
+
+- **Updated**: Added and updated documentation related to environment variables, testing, and CLI usage.
+- **Updated**: Aligned project configuration with the latest changes.
+
+#### 📝 **Commits in 0.4.0**: `1386987`, `48c2681`, `2a23ae8`, `7bbd03e`, `95b8a5a`, `f5ff67c`
 
 ---
 
@@ -30,10 +45,6 @@
 - **Updated**: Switched logging to use `rich.logging.RichHandler` for better formatted and interactive log messages.
 
 #### 📝 **Commits in 0.3.1**: `95b8a5a`, `f5ff67c`, `e06bf97`, `7617b4f`, `8a233fc`
-
----
-
-This file documents all notable changes to the `docker-ctp` project. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
@@ -125,3 +136,6 @@ This was the first official release of `docker-ctp` as a Python package, migrati
 #### 📝 **Commits in v0.1.0**: `cf68fef`, `b8f5f81`, `2012677`, `60c0d89`, `6e76882`, `ab5106b`, `ee3fce8`, `85015ee`, `a3005d9`, `b8f0709`
 
 ---
+
+> [!NOTE] 
+> This file documents all notable changes to the `docker-ctp` project. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
