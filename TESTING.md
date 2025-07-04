@@ -1,7 +1,7 @@
 # Testing Plan
 
 This repository includes a minimal Python package, `docker_ctp`. The
-`requirements-test.txt` file lists the tools used for testing and code quality.
+`pyproject.toml` file lists the tools used for testing and code quality.
 The following sections describe how to set up the environment and run all
 checks.
 
@@ -12,7 +12,7 @@ Create a virtual environment and install the test dependencies:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-test.txt
+pdm install
 ```
 
 ## 2. Static Analysis and Formatting
@@ -23,7 +23,6 @@ unit tests:
 ```bash
 # Ensure imports and code style
 isort --check --diff docker_ctp  # add tests/ if created
-black --check docker_ctp
 
 # Ruff provides additional linting
 ruff check docker_ctp
@@ -38,7 +37,7 @@ pydocstyle docker_ctp
 pylint docker_ctp
 ```
 
-Apply `black` and `isort` without the `--check` flag to automatically format files if necessary.
+Apply `isort` without the `--check` flag to automatically format files if necessary.
 ## 3. Running the Unit Tests
 
 Tests are written with `pytest` and coverage reporting is provided by

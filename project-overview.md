@@ -1,7 +1,7 @@
 ---
 repo: https://github.com/beecave-homelab/docker-ctp.git
 commit: f948c2fbf978b7d88e4e6fdb32e6746684526b03
-generated: 2025-07-03T13:19:33Z
+generated: 2025-07-03T22:42:08Z
 ---
 <!-- SECTIONS:API,CLI,WEBUI,CI,DOCKER,TESTS -->
 
@@ -10,7 +10,7 @@ generated: 2025-07-03T13:19:33Z
 A Python-based tool and shell script for building, tagging, and pushing Docker images to Docker Hub or GitHub Container Registry. Designed for developers and CI/CD workflows needing reproducible container builds.
 
 [![Language](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/Version-0.3.0-brightgreen)](#version-summary)
+[![Version](https://img.shields.io/badge/Version-0.3.1-brightgreen)](#version-summary)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-supported-blue)](Dockerfile)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
@@ -47,6 +47,7 @@ pdm install
 
 | Version | Date       | Type  | Key Changes                                                                                              |
 |:--------|:-----------|:------|:---------------------------------------------------------------------------------------------------------|
+| 0.3.1   | 2025-07-04 | 🐛    | Fixed CLI output overlap by migrating from `halo` to `rich` for spinners and logging.                    |
 | 0.3.0   | 2025-07-03 | Minor | Major refactor to a service-based architecture, with new features and tests.                             |
 | 0.2.0   | 2024-06-09 | ✨    | Python package, CLI, modular utilities, Docker/Hub support                                               |
 | 0.1.0   | 2025-06-27 | 🎉    | Initial release, porting core features from shell script to a Python package.                            |
@@ -62,7 +63,7 @@ pdm install
 - Secure token handling and input validation
 - Generates config templates (.env, .dockerignore)
 - Build-context validation with optimisation suggestions & large-file detection
-- User-friendly progress indicator (spinner) during long-running Docker operations
+- User-friendly progress indicator (spinner) powered by `rich` during long-running Docker operations
 - Robust dependency checks (docker binary & daemon, system tools)
 - Shell script and Python package both supported
 - Comprehensive static analysis (Ruff, Black, Pylint, Pydocstyle) and CI/CD pipeline
@@ -149,9 +150,7 @@ The Docker image name is determined using the following priority order:
 3. The name of the directory specified by `--dockerfile-dir` (`-d`).
 4. The name of the current working directory (as a final fallback).
 
-
-
-See [docker_ctp/cli/__init__.py](docker_ctp/cli/__init__.py) for the full implementation.
+See [docker_ctp/cli/**init**.py](docker_ctp/cli/__init__.py) for the full implementation.
 
 ## WebUI
 >
@@ -160,10 +159,10 @@ See [docker_ctp/cli/__init__.py](docker_ctp/cli/__init__.py) for the full implem
 ## Code Quality
 
 - **Static Analysis:**
-  - Ruff, Black, Pylint, and Pydocstyle are configured and enforced via PDM scripts and pre-commit hooks, ensuring code quality and style compliance.
+  - Ruff, Pylint, and Pydocstyle are configured and enforced via PDM scripts and pre-commit hooks, ensuring code quality and style compliance.
+  - All imports within the `docker_ctp` package have been standardized to use absolute paths for improved clarity and maintainability.
   - Run checks locally with:
     - `pdm run lint-ruff`
-    - `pdm run lint-black`
     - `pdm run lint-pylint`
     - `pdm run pydocstyle --convention=google docker_ctp`
 - **Continuous Integration:**
@@ -188,8 +187,9 @@ See [docker_ctp/cli/__init__.py](docker_ctp/cli/__init__.py) for the full implem
 
 - ✨ **Architectural Redesign**: Decoupled the CLI from core logic by introducing a `DockerService` layer, using dependency injection for better testability and maintenance.
 - ✨ **CI/CD Pipeline**: Implemented a full CI workflow with GitHub Actions to automate testing and linting.
-- ✨ **Enhanced Tooling**: Migrated to Click for the CLI, added a progress spinner (`halo`), and implemented pre-commit hooks for code quality.
+- ✨ **Enhanced Tooling**: Migrated to Click for the CLI, added a progress spinner (`rich`), and implemented pre-commit hooks for code quality.
 - 🔧 **Refactoring**: Overhauled configuration management with dataclasses, standardized exceptions, and improved the `.env` loading mechanism.
+- 🐛 **Bug Fixes**: Fixed CLI output overlap by migrating from `halo` to `rich`.
 - 🐛 **Bug Fixes**: Addressed issues with CLI argument parsing and error handling.
 - 🧪 **Testing**: Added a comprehensive `pytest` suite covering the service layer, CLI, configuration, and utilities.
 

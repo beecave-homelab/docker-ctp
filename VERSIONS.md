@@ -1,10 +1,27 @@
 # Release History
 
+## **v0.3.1** (Current) - *04-07-2025*
+
+🐛 **Bug Fix: CLI Output Overlap**
+
+### 🐛 **Bug Fixes in 0.3.1**
+
+- **Fixed**: Resolved an issue where spinner and log messages would overlap in the CLI output by migrating from the unmaintained `halo` library to the modern `rich` library. This ensures clean and readable output.
+
+### 🔧 **Improvements in 0.3.1**
+
+- **Refactored**: Centralized `rich.console.Console` usage to ensure consistent output handling across the application.
+- **Updated**: Switched logging to use `rich.logging.RichHandler` for better formatted and interactive log messages.
+
+#### 📝 **Commits in 0.3.1**: `95b8a5a`, `f5ff67c`, `e06bf97`, `7617b4f`, `8a233fc`
+
+---
+
 This file documents all notable changes to the `docker-ctp` project. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## **v0.3.0** (Current) - *03-07-2025*
+## **v0.3.0** - *03-07-2025*
 
 ✨ **Architectural Overhaul, Feature Enhancements & Testing**
 
