@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import logging
-import os
-from dataclasses import dataclass, field, fields as dataclass_fields, MISSING
+from dataclasses import MISSING, dataclass, field
+from dataclasses import fields as dataclass_fields
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TypeAlias
 
-DEFAULT_DOCKER_USERNAME = os.environ.get("USER", "")
-DEFAULT_GITHUB_USERNAME = os.environ.get("USER", "")
+from docker_ctp.utils.env import get_env
+
+DEFAULT_DOCKER_USERNAME = get_env("USER", "")
+DEFAULT_GITHUB_USERNAME = get_env("USER", "")
 DEFAULT_IMAGE_NAME = Path.cwd().name
 DEFAULT_DOCKERFILE_DIR = Path(".")
 DEFAULT_REGISTRY = "docker"
@@ -115,22 +118,18 @@ class Config:
     def from_env(cls) -> "Config":
         """Create a Config instance solely from environment variables."""
         creds = RegistryCredentials(
-            registry=os.environ.get("REGISTRY", DEFAULT_REGISTRY),
-            docker_username=os.environ.get("DOCKER_USERNAME", DEFAULT_DOCKER_USERNAME),
-            github_username=os.environ.get("GITHUB_USERNAME", DEFAULT_GITHUB_USERNAME),
-            username=os.environ.get("USERNAME", ""),
+            registry=get_env("REGISTRY", DEFAULT_REGISTRY),
+            docker_username=get_env("DOCKER_USERNAME", DEFAULT_DOCKER_USERNAME),
+            github_username=get_env("GITHUB_USERNAME", DEFAULT_GITHUB_USERNAME),
+            username=get_env("USERNAME", ""),
         )
         image = ImageInfo(
-            image_name=os.environ.get("IMAGE_NAME", DEFAULT_IMAGE_NAME),
-            tag=os.environ.get("TAG"),
-            dockerfile_dir=Path(
-                os.environ.get("DOCKERFILE_DIR", DEFAULT_DOCKERFILE_DIR)
-            ),
+            image_name=get_env("IMAGE_NAME", DEFAULT_IMAGE_NAME),
+            tag=get_env("TAG"),
+            dockerfile_dir=Path(get_env("DOCKERFILE_DIR", DEFAULT_DOCKERFILE_DIR)),
         )
         build = BuildFlags()
-        runtime = RuntimeFlags(
-            dry_run=False, cleanup_on_exit=not os.environ.get("NO_CLEANUP")
-        )
+        runtime = RuntimeFlags(dry_run=False, cleanup_on_exit=not get_env("NO_CLEANUP"))
         return cls(creds=creds, image=image, build=build, runtime=runtime)
 
     # ---------------------------------------------------------------------
@@ -274,6 +273,8 @@ class Config:
 # Env loader & validation util functions (adapted to new model)
 # ---------------------------------------------------------------------------
 
+ConfigSection: TypeAlias = RegistryCredentials | ImageInfo | BuildFlags | RuntimeFlags
+
 ENV_LOCATIONS = [
     Path(".env"),
     Path.home() / ".config" / "docker-ctp" / ".env",
@@ -282,7 +283,7 @@ ENV_LOCATIONS = [
 ]
 
 
-def _get_field_default(dc_instance: object, field_name: str):
+def _get_field_default(dc_instance: ConfigSection, field_name: str):
     """Return the default value for *field_name* on a dataclass *instance*."""
     for f in dataclass_fields(dc_instance):
         if f.name == field_name:

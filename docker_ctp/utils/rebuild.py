@@ -11,5 +11,6 @@ def image_exists(tag: str) -> bool:
         ["docker", "image", "inspect", tag],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        check=False,
     )
     return result.returncode == 0

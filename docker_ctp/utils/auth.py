@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 from getpass import getpass
-from ..exceptions import AuthError
+
+from docker_ctp.exceptions import AuthError
+from docker_ctp.utils.env import get_env
 
 TOKEN_ENVS = {
     "docker": ["DOCKER_TOKEN", "DOCKER_PASSWORD"],
@@ -15,7 +17,7 @@ TOKEN_ENVS = {
 def get_token(registry: str) -> str:
     """Retrieve authentication token from environment or prompt."""
     for env in TOKEN_ENVS.get(registry, []):
-        token = os.environ.get(env)
+        token = get_env(env)
         if token:
             return token
     if os.isatty(0):  # pragma: no cover - interactive

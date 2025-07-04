@@ -31,11 +31,13 @@ class CLIError(DockerCTPError):
     """Raised for command-line interface related errors."""
 
     def __init__(self, message, ctx=None, help_message=None):
+        """Initialize the CLI error."""
         super().__init__(message)
         self.ctx = ctx
         self.help_message = help_message or ""
 
     def format_message(self):
+        """Format the error message with optional help text."""
         if self.help_message:
             return f"{self.message}\n\n{self.help_message}"
         return self.message

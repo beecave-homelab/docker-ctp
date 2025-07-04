@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
-from ..exceptions import ValidationError
+
+from docker_ctp.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9._-]{1,100}$")
 IMAGE_RE = re.compile(r"^[a-zA-Z0-9._-]{1,100}$")
@@ -31,10 +35,10 @@ def validate_tag(tag: str) -> None:
 
 def validate_dockerfile_dir(path: Path) -> None:
     """Ensure Dockerfile exists in the directory."""
-    print(f"DEBUG: validate_dockerfile_dir checking {path / 'Dockerfile'}")
+    logger.debug("Checking for Dockerfile at %s", path / "Dockerfile")
     if not path.is_dir():
         raise ValidationError(f"Dockerfile directory not found: {path}")
     dockerfile = path / "Dockerfile"
     if not dockerfile.is_file():
-        print(f"DEBUG: validate_dockerfile_dir did not find Dockerfile at {dockerfile}")
+        logger.debug("Dockerfile not found at %s", dockerfile)
         raise ValidationError(f"Dockerfile not found at {dockerfile}")

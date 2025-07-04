@@ -5,64 +5,69 @@ from __future__ import annotations
 import logging
 import shlex
 import subprocess
-import sys
-import threading
-from typing import List
+from typing import List, TypeVar
 
-from halo import Halo
+from rich.console import Console
+
+from docker_ctp.utils.logging_utils import MessageHandler
+
+T = TypeVar("T")
 
 
 class Runner:
     """Helper to execute shell commands with a progress spinner."""
 
-    def __init__(self, dry_run: bool = False) -> None:
-        """Initialize the runner."""
+    def __init__(self, dry_run: bool = False, console: Console | None = None) -> None:
+        """Initialize the runner.
+
+        Args:
+            dry_run: If True, commands will be logged but not executed.
+            console: The Rich Console object to use for output.
+        """
         self.dry_run = dry_run
+        self.messages = MessageHandler(console=console)
+
+    def _run_command(self, args: List[str]) -> subprocess.CompletedProcess:
+        """Execute a shell command.
+
+        Args:
+            args: The command and its arguments as a list of strings.
+
+        Returns:
+            The completed process object.
+
+        Raises:
+            subprocess.CalledProcessError: If the command returns a non-zero exit code.
+        """
+        cmd = " ".join(shlex.quote(arg) for arg in args)
+        logging.debug("Running command: %s", cmd)
+
+        return subprocess.run(
+            args,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
 
     def run(self, args: List[str], text: str = "Running...") -> None:
-        """Execute a shell command with a spinner."""
-        cmd = " ".join(shlex.quote(arg) for arg in args)
+        """Execute a shell command with a spinner.
+
+        Args:
+            args: The command and its arguments as a list of strings.
+            text: The text to display next to the spinner.
+
+        Raises:
+            subprocess.CalledProcessError: If the command returns a non-zero exit code.
+        """
         if self.dry_run:
-            logging.info("DRY-RUN: %s", cmd)
+            self.messages.info(f"DRY-RUN: {' '.join(shlex.quote(arg) for arg in args)}")
             return
 
-        spinner = Halo(text=text, spinner="dots")
-
-        # Use a threading.Event to signal completion from the main thread
-        finished = threading.Event()
-
-        def spin() -> None:
-            while not finished.is_set():
-                spinner.tick()
-                finished.wait(0.1)
-
-        # Start the spinner in a separate thread
-        spin_thread = threading.Thread(target=spin)
-        spin_thread.start()
-
-        try:
-            logging.debug("Running command: %s", cmd)
-            # Run the actual command, redirecting stdout/stderr
-            result = subprocess.run(
-                args,
-                check=True,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-            )
+        def _execute() -> None:
+            result = self._run_command(args)
             logging.debug("Command stdout:\n%s", result.stdout)
             if result.stderr:
                 logging.debug("Command stderr:\n%s", result.stderr)
-            spinner.succeed(f"{text} done.")
-        except subprocess.CalledProcessError as e:
-            spinner.fail(f"{text} failed.")
-            logging.error("Command failed: %s", cmd)
-            # Provide detailed error output for debugging
-            logging.error("Return code: %d", e.returncode)
-            logging.error("Stdout:\n%s", e.stdout)
-            logging.error("Stderr:\n%s", e.stderr)
-            sys.exit(1)  # Exit to prevent further operations
-        finally:
-            # Signal the spinner thread to stop and wait for it
-            finished.set()
-            spin_thread.join()
+
+        self.messages.with_spinner(text, _execute)

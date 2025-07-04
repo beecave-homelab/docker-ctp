@@ -1,6 +1,6 @@
 """Entry point wrapper for docker-ctp."""
 
-from .cli import main as cli_main
+from docker_ctp.cli import main as cli_main
 
 
 def main() -> None:
