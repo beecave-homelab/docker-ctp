@@ -44,7 +44,7 @@ def test_execute_workflow(
     _mock_config: Config,
     _mock_runner: MagicMock,
     _mock_cleanup_manager: MagicMock,
-):  # noqa: R0913
+):
     """Test the main workflow execution."""
     # Arrange
     service = DockerService(_mock_config, _mock_runner, _mock_cleanup_manager)
