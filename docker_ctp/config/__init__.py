@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import MISSING, dataclass, field
 from dataclasses import fields as dataclass_fields
 from pathlib import Path
@@ -10,6 +9,10 @@ from types import SimpleNamespace
 from typing import TypeAlias
 
 from docker_ctp.utils.env import get_env
+from docker_ctp.utils.logging_utils import get_message_handler
+
+# Centralised Rich-based message handler for user-visible output
+messages = get_message_handler()
 
 DEFAULT_DOCKER_USERNAME = get_env("USER", "")
 DEFAULT_GITHUB_USERNAME = get_env("USER", "")
@@ -309,7 +312,7 @@ def load_env(config: Config) -> None:  # noqa: D401
 
     for env_path in search_paths:
         if env_path.is_file():
-            logging.info("Loading configuration from %s", env_path)
+            messages.info("Loading configuration from %s", env_path)
             with env_path.open("r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
@@ -346,4 +349,4 @@ def load_env(config: Config) -> None:  # noqa: D401
             config.resolve()  # Re-resolve dynamic values after loading .env
             return
 
-    logging.info("No .env file found in search paths. Using defaults/CLI args.")
+    messages.info("No .env file found in search paths. Using defaults/CLI args.")

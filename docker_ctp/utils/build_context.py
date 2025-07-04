@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
+
+from docker_ctp.utils.logging_utils import get_message_handler
+
+# Centralised Rich-based message handler
+messages = get_message_handler()
 
 __all__: list[str] = [
     "validate_build_context",
@@ -33,31 +37,31 @@ LARGE_FILE_THRESHOLD_BYTES = 50 * 1024 * 1024  # 50MB
 
 def validate_build_context(dockerfile_dir: Path) -> None:  # noqa: D401
     """Check for .dockerignore, large files, and other common issues."""
-    logging.info("Validating build context in %s...", dockerfile_dir)
+    messages.info("Validating build context in %s...", dockerfile_dir)
     warnings = 0
     suggestions = []
 
     # 1. Validate .dockerignore file
     dockerignore_path = dockerfile_dir / ".dockerignore"
     if not dockerignore_path.is_file():
-        logging.warning("No .dockerignore file found in build context.")
+        messages.warning("No .dockerignore file found in build context.")
         suggestions.append(
             "Create a .dockerignore file to exclude unnecessary files and "
             "optimize build context."
         )
         warnings += 1
     else:
-        logging.info("✓ .dockerignore file found.")
+        messages.info("✓ .dockerignore file found.")
         try:
             with dockerignore_path.open("r", encoding="utf-8") as f:
                 for i, line in enumerate(f, 1):
                     if line.strip() == "**":
-                        logging.warning(
+                        messages.warning(
                             ".dockerignore line %s ('**') may exclude everything.", i
                         )
                         warnings += 1
         except OSError as e:
-            logging.warning("Could not read .dockerignore file: %s", e)
+            messages.warning("Could not read .dockerignore file: %s", e)
             warnings += 1
 
     # 2. Check for common excludable files/directories
@@ -72,14 +76,14 @@ def validate_build_context(dockerfile_dir: Path) -> None:  # noqa: D401
                 found_excludables.append(pattern)
 
     if found_excludables:
-        logging.warning("Found files/directories that could be excluded:")
+        messages.warning("Found files/directories that could be excluded:")
         for excludable in found_excludables:
-            logging.warning("  - %s", excludable)
+            messages.warning("  - %s", excludable)
         suggestions.append(
             f"Add these patterns to .dockerignore: {', '.join(found_excludables)}"
         )
         # Provide immediate actionable suggestion at WARNING level for better visibility/testability
-        logging.warning(
+        messages.warning(
             "Add these patterns to .dockerignore: %s", ", ".join(found_excludables)
         )
         warnings += 1
@@ -98,12 +102,12 @@ def validate_build_context(dockerfile_dir: Path) -> None:  # noqa: D401
                 # File might be a broken symlink, skip it
                 continue
     except OSError as e:
-        logging.warning("Could not scan for large files: %s", e)
+        messages.warning("Could not scan for large files: %s", e)
 
     if large_files:
-        logging.warning("Found large files in build context:")
+        messages.warning("Found large files in build context:")
         for large_file in large_files:
-            logging.warning("  - %s", large_file)
+            messages.warning("  - %s", large_file)
         suggestions.append(
             "Consider excluding large files or using multi-stage builds to "
             "reduce image size."
@@ -112,12 +116,12 @@ def validate_build_context(dockerfile_dir: Path) -> None:  # noqa: D401
 
     # 4. Final summary
     if warnings == 0:
-        logging.info("✓ Build context validation passed with no issues.")
+        messages.info("✓ Build context validation passed with no issues.")
     else:
-        logging.warning(
+        messages.warning(
             "Build context validation completed with %d warnings.", warnings
         )
         if suggestions:
-            logging.info("Optimization suggestions:")
+            messages.info("Optimization suggestions:")
             for suggestion in suggestions:
-                logging.info("  �� %s", suggestion)
+                messages.info("  - %s", suggestion)

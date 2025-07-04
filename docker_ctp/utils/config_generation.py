@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
+
+from docker_ctp.utils.logging_utils import get_message_handler
+
+# Centralised Rich-based message handler
+messages = get_message_handler()
 
 __all__: list[str] = [
     "generate_config_files",
@@ -115,68 +119,68 @@ coverage/
 
 def generate_config_files(dry_run: bool = False) -> None:  # noqa: D401
     """Generate default .env and .dockerignore files."""
-    logging.info("Generating default configuration files...")
+    messages.info("Generating default configuration files...")
 
     # --- Generate .env file in user's config directory ---
     generated_files = []
     env_path = Path.home() / ".config" / "docker-ctp" / ".env"
 
     if env_path.exists():
-        logging.warning("Configuration file already exists: %s", env_path)
-        logging.info("Skipping to avoid overwriting existing configuration.")
+        messages.warning("Configuration file already exists: %s", env_path)
+        messages.info("Skipping to avoid overwriting existing configuration.")
     else:
-        logging.info("Generating configuration file: %s", env_path)
+        messages.info("Generating configuration file: %s", env_path)
         if dry_run:
-            logging.info("DRY-RUN: Would create directory %s", env_path.parent)
-            logging.info("DRY-RUN: Would write .env template to %s", env_path)
+            messages.info("DRY-RUN: Would create directory %s", env_path.parent)
+            messages.info("DRY-RUN: Would write .env template to %s", env_path)
         else:
             try:
                 env_path.parent.mkdir(parents=True, exist_ok=True)
                 env_path.write_text(ENV_TEMPLATE, encoding="utf-8")
-                logging.info("✓ Generated: %s", env_path)
+                messages.info("✓ Generated: %s", env_path)
                 generated_files.append(str(env_path))
             except OSError as e:
-                logging.error("Failed to generate %s: %s", env_path, e)
+                messages.error("Failed to generate %s: %s", env_path, e)
 
     # --- Generate .dockerignore in current directory ---
     dockerignore_path = Path(".dockerignore")
     if dockerignore_path.exists():
-        logging.info(".dockerignore already exists - skipping template generation.")
+        messages.info(".dockerignore already exists - skipping template generation.")
     else:
-        logging.info("Generating .dockerignore template: %s", dockerignore_path)
+        messages.info("Generating .dockerignore template: %s", dockerignore_path)
         if dry_run:
-            logging.info(
+            messages.info(
                 "DRY-RUN: Would write .dockerignore template to %s", dockerignore_path
             )
         else:
             try:
                 dockerignore_path.write_text(DOCKERIGNORE_TEMPLATE, encoding="utf-8")
-                logging.info("✓ Generated: %s", dockerignore_path)
+                messages.info("✓ Generated: %s", dockerignore_path)
                 generated_files.append(str(dockerignore_path))
             except OSError as e:
-                logging.error("Failed to generate %s: %s", dockerignore_path, e)
+                messages.error("Failed to generate %s: %s", dockerignore_path, e)
 
     # --- Provide summary and next steps ---
     if generated_files:
-        logging.info("Configuration generation completed!")
-        logging.info("")
-        logging.info("📋 Generated files:")
+        messages.info("Configuration generation completed!")
+        messages.info("")
+        messages.info("📋 Generated files:")
         for file in generated_files:
-            logging.info("  - %s", file)
-        logging.info("")
-        logging.info("🔧 Next steps:")
-        logging.info("  1. Edit the .env file with your actual values: %s", env_path)
-        logging.info(
+            messages.info("  - %s", file)
+        messages.info("")
+        messages.info("🔧 Next steps:")
+        messages.info("  1. Edit the .env file with your actual values: %s", env_path)
+        messages.info(
             "  2. Set auth tokens (DOCKER_TOKEN/GITHUB_TOKEN) in the .env file."
         )
-        logging.info(
+        messages.info(
             "  3. Review and customize .dockerignore in the current directory."
         )
-        logging.info("  4. Run 'docker-ctp --dry-run' to test your configuration.")
-        logging.info("")
-        logging.warning(
+        messages.info("  4. Run 'docker-ctp --dry-run' to test your configuration.")
+        messages.info("")
+        messages.warning(
             "⚠️  Remember to add .env files to your global .gitignore to protect "
             "sensitive tokens!"
         )
     elif not dry_run:
-        logging.info("No new configuration files were generated.")
+        messages.info("No new configuration files were generated.")

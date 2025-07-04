@@ -16,7 +16,6 @@ Public attributes exported via :pydata:`__all__`:
 
 from __future__ import annotations
 
-import logging
 import sys
 import traceback
 from pathlib import Path
@@ -24,7 +23,6 @@ from types import SimpleNamespace
 
 import click
 from rich.console import Console
-from rich.logging import RichHandler
 
 from docker_ctp import __version__
 from docker_ctp.config import DEFAULT_DOCKERFILE_DIR, DEFAULT_REGISTRY, Config, load_env
@@ -34,29 +32,8 @@ from docker_ctp.exceptions import CLIError
 from docker_ctp.utils.cleanup import CleanupManager
 from docker_ctp.utils.config_generation import generate_config_files
 from docker_ctp.utils.dependency_checker import check_dependencies
+from docker_ctp.utils.logging_utils import configure as configure_root_logger
 from docker_ctp.utils.logging_utils import print_ascii_art
-
-
-def configure_logging(verbose: bool, quiet: bool, console: Console) -> None:  # noqa: D401
-    """Configure the root logger using rich."""
-    if quiet:
-        level = logging.ERROR
-    elif verbose:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-
-    logging.basicConfig(
-        level=level,
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[
-            RichHandler(
-                rich_tracebacks=True, show_path=False, show_time=False, console=console
-            )
-        ],
-    )
-
 
 # ---------------------------------------------------------------------------
 # Helper functions for the new Click-powered CLI
@@ -136,7 +113,7 @@ def build_cli() -> click.Command:  # noqa: D401
     ) -> None:
         """Entry-point for *docker-ctp* when invoked via the CLI."""
         console = Console(force_terminal=True)
-        configure_logging(kwargs["verbose"], kwargs["quiet"], console)
+        configure_root_logger(kwargs["verbose"], kwargs["quiet"])
 
         # Only print ASCII art again if we're not in quiet mode and this isn't a help request
         if not kwargs["quiet"] and not any(

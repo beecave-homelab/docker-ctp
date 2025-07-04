@@ -57,7 +57,7 @@ def login(config: Config, runner: Runner) -> None:
         if process.wait() != 0:
             raise DockerOperationError("Failed to login")
 
-    runner.messages.with_spinner("Authenticating with registry", _perform_login)
+    runner.messages.with_spinner("Authenticating with registry ", _perform_login)
 
 
 def build(config: Config, runner: Runner) -> None:

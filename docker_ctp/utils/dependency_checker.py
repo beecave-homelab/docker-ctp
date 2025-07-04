@@ -14,9 +14,7 @@ __all__: list[str] = [
 ]
 
 
-def check_dependencies(
-    runner: Optional[Runner] = None, dry_run: bool = False
-) -> None:  # noqa: D401
+def check_dependencies(runner: Optional[Runner] = None, dry_run: bool = False) -> None:  # noqa: D401
     """Verify that Docker is installed and the daemon is running.
 
     Args:
