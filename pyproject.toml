@@ -11,7 +11,7 @@ license = { text = "MIT" }
 name = "docker-ctp"
 readme = "README.md"
 requires-python = ">=3.12"
-version = "0.3.1"
+version = "0.4.0"
 
 [project.scripts]
 docker-ctp = "docker_ctp.cli:main"
