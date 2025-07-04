@@ -106,6 +106,11 @@ The architecture has been refactored to decouple the command-line interface from
 - **Service-Oriented Design**: The new `DockerService` in `docker_ctp/core/service.py` centralizes the orchestration of Docker operations (build, tag, push). This service acts as the single source of truth for the application's workflow.
 - **Dependency Injection**: The `DockerService` receives its dependencies (like `Config`, `Runner`, and `CleanupManager`) via its constructor. This inverts control, making the service easier to test in isolation and more flexible to future changes.
 - **Thin CLI Layer**: The `docker_ctp/cli/__init__.py` module is now a lightweight interface responsible only for parsing user input, preparing dependencies, and invoking the `DockerService`.
+- **Centralized Logging & Spinner Output**: All user-visible messages and progress spinners are unified through a shared `MessageHandler` (see `docker_ctp/utils/logging_utils.py`).
+  - The CLI invokes `logging_utils.configure(verbose, quiet)` at startup to attach exactly one `rich.logging.RichHandler` to the root logger and set the appropriate log level (INFO by default, DEBUG with `--verbose`, ERROR with `--quiet`).
+  - Modules import the singleton `messages: MessageHandler` and call `messages.info(...)`, `messages.warning(...)`, `messages.error(...)`, or `messages.success(...)` for consistent, colorful output.
+  - Internal diagnostics continue to use the standard `logging.debug(...)` so that verbose logs respect the configured level.
+  - The legacy `halo` spinner library has been fully replaced by Rich’s built-in spinners, ensuring flicker-free, thread-safe CLI feedback. Unit tests in `tests/test_logging_utils.py` verify idempotent setup and correct formatting.
 
 - [docker_ctp/core/service.py](docker_ctp/core/service.py): The new service layer that orchestrates the build-tag-push workflow.
 - [docker_ctp/core/docker_ops.py](https://github.com/beecave-homelab/docker-ctp/blob/f948c2fbf978b7d88e4e6fdb32e6746684526b03/docker_ctp/core/docker_ops.py): High-level Docker build, tag, push logic with error handling.
