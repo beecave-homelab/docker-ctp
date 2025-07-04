@@ -45,7 +45,9 @@ def login(config: Config, runner: Runner) -> None:
         return
 
     def _perform_login() -> None:
-        runner.messages.info("Attempting to get token for registry: %s", config.registry)
+        runner.messages.info(
+            "Attempting to get token for registry: %s", config.registry
+        )
         token = get_token(config.registry)
 
         if not token:
@@ -54,7 +56,9 @@ def login(config: Config, runner: Runner) -> None:
                 f"No token found for {config.registry}. "
                 "Please set DOCKER_HUB_TOKEN/GITHUB_TOKEN or log in manually."
             )
-        runner.messages.info("Token found, proceeding with login for user: %s", config.username)
+        runner.messages.info(
+            "Token found, proceeding with login for user: %s", config.username
+        )
 
         registry = "ghcr.io" if config.registry == "github" else None
         cmd = ["docker", "login"]
@@ -72,7 +76,9 @@ def login(config: Config, runner: Runner) -> None:
 
         runner.messages.info("Waiting for docker login process to complete...")
         stdout, stderr = process.communicate(input=token.encode())
-        runner.messages.info("Process finished with return code: %s", process.returncode)
+        runner.messages.info(
+            "Process finished with return code: %s", process.returncode
+        )
 
         if stdout:
             runner.messages.info("STDOUT: %s", stdout.decode().strip())
