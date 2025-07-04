@@ -1,6 +1,22 @@
 # Release History
 
-## **v0.3.1** (Current) - *04-07-2025*
+## **v0.4.0** (Current) - *04-07-2025*
+
+✨ **Version Bump**
+
+### ✨ **New Features in 0.4.0**
+
+- **Added**: Placeholder for new features.
+
+### 🔧 **Improvements in 0.4.0**
+
+- **Updated**: Version number across various project files.
+
+#### 📝 **Commits in 0.4.0**: `7fcc295`, `90349c3`, `df872a1`, `1386987`, `48c2681`
+
+---
+
+## **v0.3.1** - *04-07-2025*
 
 🐛 **Bug Fix: CLI Output Overlap**
 

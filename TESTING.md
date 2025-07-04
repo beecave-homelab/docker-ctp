@@ -10,9 +10,7 @@ checks.
 Create a virtual environment and install the test dependencies:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pdm install
+pdm install -G lint -G test
 ```
 
 ## 2. Static Analysis and Formatting
@@ -38,6 +36,7 @@ pylint docker_ctp
 ```
 
 Apply `isort` without the `--check` flag to automatically format files if necessary.
+
 ## 3. Running the Unit Tests
 
 Tests are written with `pytest` and coverage reporting is provided by
@@ -46,6 +45,7 @@ Tests are written with `pytest` and coverage reporting is provided by
 ```bash
 pytest --cov=docker_ctp --cov-report=term-missing
 ```
+
 If present, this command will execute all tests under the `tests` directory and display a coverage summary highlighting lines that are not executed.
 
 ## 4. Writing Tests
@@ -68,4 +68,3 @@ Tests should avoid performing real Docker operations. Use mocking (e.g.
 Integrate the above checks in your CI configuration to ensure commits meet the
 project's quality standards. A typical CI job would run the commands from the
 Static Analysis and Unit Tests sections.
-

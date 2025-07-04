@@ -22,8 +22,8 @@
 
 ### 3. Verification
 
-- [ ] After refactoring, run any existing tests to ensure that the application's behavior remains unchanged.
-- [ ] Manually test the CLI to confirm that configuration is still loaded correctly from environment variables.
+- [x] After refactoring, run any existing tests to ensure that the application's behavior remains unchanged.
+- [x] Manually test the CLI to confirm that configuration is still loaded correctly from environment variables.
 
 ## Notes
 
