@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from dataclasses import MISSING, dataclass, field
 from dataclasses import fields as dataclass_fields
 from pathlib import Path
@@ -321,6 +323,11 @@ def load_env(config: Config) -> None:  # noqa: D401
                     key, value = line.split("=", 1)
                     key = key.strip().lower()
                     value = value.strip().strip("'\"")
+
+                    # Export to the environment, but do not override existing variables.
+                    # This ensures shell-exported variables take precedence.
+                    if key.upper() not in os.environ:
+                        os.environ[key.upper()] = value
 
                     # Find the correct sub-config and update it
                     for sub_config in (

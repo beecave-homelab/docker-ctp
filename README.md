@@ -4,7 +4,7 @@ A Python-based tool for building, tagging, and pushing Docker images to Docker H
 
 ## Versions
 
-**Current version**: 0.5.0 – Refactored and centralized messaging and logging.
+**Current version**: 0.5.1 – Fixed a critical authentication bug.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ A Python-based tool for building, tagging, and pushing Docker images to Docker H
 ## Badges
 
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Version](https://img.shields.io/badge/version-0.5.0-blue)
+![Version](https://img.shields.io/badge/version-0.5.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/docker-supported-blue)
 

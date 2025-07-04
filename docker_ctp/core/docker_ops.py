@@ -45,19 +45,46 @@ def login(config: Config, runner: Runner) -> None:
         return
 
     def _perform_login() -> None:
+        runner.messages.info("Attempting to get token for registry: %s", config.registry)
         token = get_token(config.registry)
+
+        if not token:
+            runner.messages.error("Authentication token not found.")
+            raise DockerOperationError(
+                f"No token found for {config.registry}. "
+                "Please set DOCKER_HUB_TOKEN/GITHUB_TOKEN or log in manually."
+            )
+        runner.messages.info("Token found, proceeding with login for user: %s", config.username)
+
         registry = "ghcr.io" if config.registry == "github" else None
         cmd = ["docker", "login"]
         if registry:
             cmd.append(registry)
         cmd.extend(["-u", config.username, "--password-stdin"])
-        process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-        if token:
-            process.communicate(input=token.encode())
-        if process.wait() != 0:
-            raise DockerOperationError("Failed to login")
+        runner.messages.info("Executing command: %s", " ".join(cmd))
 
-    runner.messages.with_spinner("Authenticating with registry ", _perform_login)
+        process = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        runner.messages.info("Waiting for docker login process to complete...")
+        stdout, stderr = process.communicate(input=token.encode())
+        runner.messages.info("Process finished with return code: %s", process.returncode)
+
+        if stdout:
+            runner.messages.info("STDOUT: %s", stdout.decode().strip())
+        if stderr:
+            runner.messages.info("STDERR: %s", stderr.decode().strip())
+
+        if process.returncode != 0:
+            error_message = stderr.decode().strip() or stdout.decode().strip()
+            raise DockerOperationError(f"Failed to login: {error_message}")
+
+    _perform_login()
+    runner.messages.success("Successfully authenticated with registry")
 
 
 def build(config: Config, runner: Runner) -> None:

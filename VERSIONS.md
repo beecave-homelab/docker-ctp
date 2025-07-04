@@ -1,6 +1,19 @@
 # Release History
 
-## **v0.5.0** (Current) - *04-07-2025*
+## **v0.5.1** (Current) - *04-07-2025*
+
+🐛 **Bug Fix: Authentication Hang**
+
+### 🐛 **Bug Fixes in 0.5.1**
+
+- **Fixed**: Resolved a critical authentication hang by ensuring credentials from `.env` files are correctly loaded into the environment (`os.environ`).
+- **Fixed**: Removed a conflicting `rich` spinner from the login process that was suppressing the interactive password prompt.
+
+#### 📝 **Commits in 0.5.1**: `bed9142`
+
+---
+
+## **v0.5.0** - *04-07-2025*
 
 ✨ **Refactor: Messaging and Logging**
 
